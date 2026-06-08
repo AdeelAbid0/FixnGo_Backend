@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FixNGo — MongoDB Schema</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-bottom: 1px solid #334155;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 22px; font-weight: 700; color: #f8fafc; }
+  header span { font-size: 13px; color: #94a3b8; }
+
+  .legend {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  .canvas {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #64748b;
+    margin-bottom: -36px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .card {
+    border-radius: 12px;
+    border: 1px solid;
+    min-width: 230px;
+    max-width: 280px;
+    flex: 1;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .card-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+  .card-header .icon { font-size: 15px; }
+  .card-header .collection-name { font-family: 'Courier New', monospace; }
+
+  .card-body { padding: 0; }
+
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 5px 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+  .field:hover { background: rgba(255,255,255,0.04); }
+
+  .field-icon {
+    width: 16px;
+    font-size: 9px;
+    flex-shrink: 0;
+    color: #64748b;
+  }
+  .field-name {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    flex: 1;
+    color: #e2e8f0;
+  }
+  .field-name.pk { color: #fbbf24; font-weight: 700; }
+  .field-name.fk { color: #60a5fa; }
+  .field-type {
+    font-size: 10px;
+    color: #64748b;
+    text-align: right;
+    min-width: 70px;
+  }
+  .field-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .badge-pk { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .badge-fk { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .badge-idx { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .badge-enum { background: rgba(52,211,153,0.15); color: #34d399; }
+
+  /* Color themes per domain */
+  .auth    { border-color: #7c3aed; }
+  .auth .card-header    { background: linear-gradient(90deg,#4c1d95,#312e81); color: #c4b5fd; }
+
+  .customer { border-color: #0891b2; }
+  .customer .card-header { background: linear-gradient(90deg,#164e63,#0c4a6e); color: #7dd3fc; }
+
+  .partner  { border-color: #059669; }
+  .partner .card-header  { background: linear-gradient(90deg,#064e3b,#065f46); color: #6ee7b7; }
+
+  .service  { border-color: #d97706; }
+  .service .card-header  { background: linear-gradient(90deg,#78350f,#713f12); color: #fcd34d; }
+
+  .booking  { border-color: #dc2626; }
+  .booking .card-header  { background: linear-gradient(90deg,#7f1d1d,#991b1b); color: #fca5a5; }
+
+  .payment  { border-color: #9333ea; }
+  .payment .card-header  { background: linear-gradient(90deg,#581c87,#6b21a8); color: #d8b4fe; }
+
+  .content  { border-color: #ca8a04; }
+  .content .card-header  { background: linear-gradient(90deg,#713f12,#92400e); color: #fde68a; }
+
+  .system   { border-color: #475569; }
+  .system .card-header   { background: linear-gradient(90deg,#1e293b,#334155); color: #94a3b8; }
+
+  /* Relationship arrows section */
+  .relations {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 0 0 16px 0;
+  }
+  .relations h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+  .rel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 8px;
+  }
+  .rel-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #334155;
+  }
+  .rel-from { font-family: monospace; color: #7dd3fc; font-weight: 600; }
+  .rel-arrow { color: #475569; font-size: 16px; }
+  .rel-to { font-family: monospace; color: #6ee7b7; font-weight: 600; }
+  .rel-type {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .one-one { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .one-many { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .rel-via { font-size: 10px; color: #64748b; font-style: italic; }
+
+  .divider {
+    height: 1px;
+    background: #1e293b;
+    margin: 4px 0;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    color: #475569;
+    border-top: 1px solid #1e293b;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🔧 FixNGo — MongoDB Schema</h1>
+    <span>All collections, fields, types &amp; relationships</span>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div>Auth</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0891b2"></div>Customer</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>Partner</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div>Service</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Booking</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9333ea"></div>Payment</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ca8a04"></div>Content</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#475569"></div>System</div>
+  </div>
+</header>
+
+<div class="canvas">
+
+  <!-- ─── AUTH & CORE USERS ─── -->
+  <div class="section-label">Auth &amp; Core Users</div>
+  <div class="row">
+
+    <!-- USERS -->
+    <div class="card auth">
+      <div class="card-header"><span class="icon">👤</span><span class="collection-name">users</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">email</span><span class="field-type">String</span><span class="field-badge badge-idx">UNIQUE</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">password</span><span class="field-type">String (hash)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">role</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">phone</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">profileImage</span><span class="field-type">String (URL)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isEmailVerified</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">otp</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">otpExpiry</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">refreshToken</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(124,58,237,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#a78bfa">role: "customer" | "partner" | "superadmin" | "admin"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="card customer">
+      <div class="card-header"><span class="icon">🧑‍💼</span><span class="collection-name">customers</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">userId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→users</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(8,145,178,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#38bdf8">Extended profile data lives here. Name/email/phone pulled from users via populate.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNERS -->
+    <div class="card partner">
+      <div class="card-header"><span class="icon">🔧</span><span class="collection-name">partners</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">userId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→users</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">businessName</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">category</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">location</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">latitude</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">longitude</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">description</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">businessType</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">gallery</span><span class="field-type">[String]</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">rating</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">totalEarnings</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">verificationStatus</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isAvailable</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">availabilityStatus</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">workingHours</span><span class="field-type">{ start, end }</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">breakTime</span><span class="field-type">{ start, end }</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">addedBy</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→users</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">approvedBy</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→users</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">joinedDate</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(5,150,105,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#34d399">status: "active"|"pending"|"rejected"|"blocked"<br>businessType: "Individual"|"Small Shop"|"Medium Shop"|"Service Center"</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── CUSTOMER DATA ─── -->
+  <div class="section-label">Customer Data</div>
+  <div class="row">
+
+    <!-- VEHICLES -->
+    <div class="card customer">
+      <div class="card-header"><span class="icon">🚗</span><span class="collection-name">vehicles</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">year</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">variant</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">registrationCity</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">licensePlate</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">fuelType</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">image</span><span class="field-type">String (URL)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+      </div>
+    </div>
+
+    <!-- ADDRESSES -->
+    <div class="card customer">
+      <div class="card-header"><span class="icon">📍</span><span class="collection-name">addresses</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">address</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">phone</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">tag</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(8,145,178,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#38bdf8">tag: "Home" | "Work" | "Other"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLETS -->
+    <div class="card payment">
+      <div class="card-header"><span class="icon">👛</span><span class="collection-name">wallets</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">balance</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">currency</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(147,51,234,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#c084fc">status: "Active" | "Inactive" | "Frozen"<br>currency: "PKR" (default)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLET TRANSACTIONS -->
+    <div class="card payment">
+      <div class="card-header"><span class="icon">💸</span><span class="collection-name">wallet_transactions</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">walletId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→wallets</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">bookingId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→bookings</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">amount</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">type</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">description</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">referenceId</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(147,51,234,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#c084fc">type: "credit" | "debit"<br>status: "success" | "failed" | "pending"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT METHODS -->
+    <div class="card payment">
+      <div class="card-header"><span class="icon">💳</span><span class="collection-name">payment_methods</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">type</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">cardNumber</span><span class="field-type">String (masked)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">expireDate</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">cvc</span><span class="field-type">String (enc)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isDefault</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(147,51,234,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#c084fc">type: "debit" | "paypal" | "easypaisa" | "jazzcash"</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── SERVICES & PARTNER ─── -->
+  <div class="section-label">Services &amp; Partner Operations</div>
+  <div class="row">
+
+    <!-- SERVICES -->
+    <div class="card service">
+      <div class="card-header"><span class="icon">⚙️</span><span class="collection-name">services</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">description</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">category</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">basePrice</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">duration</span><span class="field-type">Number (mins)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">image</span><span class="field-type">String (URL)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isFeatured</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(217,119,6,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#fbbf24">status: "active" | "inactive" | "archived"<br>Managed by superadmin</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNER SERVICES -->
+    <div class="card partner">
+      <div class="card-header"><span class="icon">🛠️</span><span class="collection-name">partner_services</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">partnerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→partners</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">serviceId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→services</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">price</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">duration</span><span class="field-type">Number (mins)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isActive</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(5,150,105,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#34d399">Partner sets their own price/duration per service. Junction table for many-to-many.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNER PAYOUT -->
+    <div class="card partner">
+      <div class="card-header"><span class="icon">💰</span><span class="collection-name">payouts</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">partnerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→partners</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">amount</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">bankName</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">accountHolderName</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">accountNumber</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">expiry</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">verificationStatus</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">requestedAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">processedAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(5,150,105,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#34d399">status: "pending"|"processing"|"completed"|"failed"</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── BOOKINGS & CORE ─── -->
+  <div class="section-label">Bookings &amp; Reviews</div>
+  <div class="row">
+
+    <!-- BOOKINGS -->
+    <div class="card booking">
+      <div class="card-header"><span class="icon">📅</span><span class="collection-name">bookings</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">partnerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→partners</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">serviceId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→services</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">partnerServiceId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→partner_services</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">vehicleId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→vehicles</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">addressId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→addresses</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">scheduledAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">duration</span><span class="field-type">Number (mins)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">location</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">price</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">paymentMethod</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">paymentStatus</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">notes</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">cancelReason</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(220,38,38,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#fca5a5">status: "upcoming"|"ongoing"|"completed"|"canceled"<br>paymentStatus: "pending"|"paid"|"refunded"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RATINGS -->
+    <div class="card booking">
+      <div class="card-header"><span class="icon">⭐</span><span class="collection-name">ratings</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">bookingId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→bookings</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">partnerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→partners</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">rating</span><span class="field-type">Number (1–5)</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">comment</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(220,38,38,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#fca5a5">One rating per booking (unique index on bookingId). After submit, update partners.rating (avg).</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── CONTENT & SYSTEM ─── -->
+  <div class="section-label">Content &amp; System</div>
+  <div class="row">
+
+    <!-- FAQs -->
+    <div class="card content">
+      <div class="card-header"><span class="icon">❓</span><span class="collection-name">faqs</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">question</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">answer</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">category</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">order</span><span class="field-type">Number</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isActive</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+      </div>
+    </div>
+
+    <!-- CONTACT MESSAGES -->
+    <div class="card content">
+      <div class="card-header"><span class="icon">✉️</span><span class="collection-name">contact_messages</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">email</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">phone</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">message</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(202,138,4,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#fbbf24">status: "pending" | "responded" | "closed"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATIONS -->
+    <div class="card system">
+      <div class="card-header"><span class="icon">🗺️</span><span class="collection-name">locations</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">city</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">country</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">isActive</span><span class="field-type">Boolean</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="card system">
+      <div class="card-header"><span class="icon">📄</span><span class="collection-name">about_content</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">title</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">description</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">mission</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">vision</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">stats</span><span class="field-type">[Object]</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">images</span><span class="field-type">[String]</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">updatedAt</span><span class="field-type">Date</span></div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER QUESTIONS -->
+    <div class="card content">
+      <div class="card-header"><span class="icon">💬</span><span class="collection-name">customer_questions</span></div>
+      <div class="card-body">
+        <div class="field"><span class="field-icon">🔑</span><span class="field-name pk">_id</span><span class="field-type">ObjectId</span><span class="field-badge badge-pk">PK</span></div>
+        <div class="field"><span class="field-icon">🔗</span><span class="field-name fk">customerId</span><span class="field-type">ObjectId</span><span class="field-badge badge-fk">FK→customers</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">question</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">answer</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">status</span><span class="field-type">String</span><span class="field-badge badge-enum">ENUM</span></div>
+        <div class="field"><span class="field-icon"></span><span class="field-name">createdAt</span><span class="field-type">Date</span></div>
+        <div class="divider"></div>
+        <div class="field" style="background:rgba(202,138,4,0.08);padding:4px 14px">
+          <span style="font-size:10px;color:#fbbf24">status: "pending" | "answered"</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── RELATIONSHIPS ─── -->
+  <div class="relations">
+    <h2>Collection Relationships</h2>
+    <div class="rel-grid">
+
+      <div class="rel-item">
+        <span class="rel-from">users</span>
+        <span class="rel-arrow">──1:1──▶</span>
+        <span class="rel-to">customers</span>
+        <span class="rel-type one-one">1 : 1</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">users</span>
+        <span class="rel-arrow">──1:1──▶</span>
+        <span class="rel-to">partners</span>
+        <span class="rel-type one-one">1 : 1</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">vehicles</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">addresses</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:1──▶</span>
+        <span class="rel-to">wallets</span>
+        <span class="rel-type one-one">1 : 1</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">wallets</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">wallet_transactions</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">payment_methods</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">services</span>
+        <span class="rel-arrow">──M:N──▶</span>
+        <span class="rel-to">partners</span>
+        <span class="rel-type one-many">M : N</span>
+        <span class="rel-via">via partner_services</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">bookings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">partners</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">bookings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">services</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">bookings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">vehicles</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">bookings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">addresses</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">bookings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">bookings</span>
+        <span class="rel-arrow">──1:1──▶</span>
+        <span class="rel-to">ratings</span>
+        <span class="rel-type one-one">1 : 1</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">bookings</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">wallet_transactions</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">partners</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">payouts</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">customers</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">customer_questions</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+      <div class="rel-item">
+        <span class="rel-from">partners</span>
+        <span class="rel-arrow">──1:N──▶</span>
+        <span class="rel-to">ratings</span>
+        <span class="rel-type one-many">1 : N</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── SUMMARY ─── -->
+  <div class="relations">
+    <h2>Collections Summary — 16 Collections Total</h2>
+    <div class="rel-grid">
+      <div class="rel-item"><span style="font-size:11px;color:#c4b5fd">🔐 Auth (2)</span><span style="font-size:10px;color:#64748b;margin-left:8px">users, customers</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#7dd3fc">👤 Customer (5)</span><span style="font-size:10px;color:#64748b;margin-left:8px">customers, vehicles, addresses, wallets, payment_methods</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#6ee7b7">🔧 Partner (3)</span><span style="font-size:10px;color:#64748b;margin-left:8px">partners, partner_services, payouts</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#fcd34d">⚙️ Service (1)</span><span style="font-size:10px;color:#64748b;margin-left:8px">services</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#fca5a5">📅 Booking (3)</span><span style="font-size:10px;color:#64748b;margin-left:8px">bookings, ratings, wallet_transactions</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#fde68a">📝 Content (4)</span><span style="font-size:10px;color:#64748b;margin-left:8px">faqs, contact_messages, about_content, customer_questions</span></div>
+      <div class="rel-item"><span style="font-size:11px;color:#94a3b8">🌍 System (1)</span><span style="font-size:10px;color:#64748b;margin-left:8px">locations</span></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>FixNGo Backend Schema · Generated for Node/Express/MongoDB · All collections use Mongoose with timestamps</footer>
+
+</body>
+</html>
