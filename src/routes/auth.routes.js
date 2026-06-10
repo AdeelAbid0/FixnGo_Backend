@@ -4,11 +4,12 @@ import {
   registerPartner,
   login,
 } from "../controllers/auth.controller.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router.post("/register/customer", registerCustomer);
-router.post("/register/partner", registerPartner);
+router.post("/register/partner", upload.array("serviceImages", 5), registerPartner);
 router.post("/login", login);
 
 export default router;

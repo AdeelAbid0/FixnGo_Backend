@@ -1,8 +1,10 @@
 import { User } from "../models/user.model.js";
 import { Partner } from "../models/partner.model.js";
+import { Service } from "../models/service.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const generateRefreshTokenAndAccessToken = async (userId) => {
   const user = await User.findById(userId);
@@ -48,7 +50,8 @@ const registerPartner = asyncHandler(async (req, res) => {
     longitude,
     latitude,
     services,
-  } = req.body;
+    description,
+  } = req.body ?? {};
 
   if (
     [fullName, email, phone, businessName].some(
@@ -62,8 +65,24 @@ const registerPartner = asyncHandler(async (req, res) => {
     );
   }
 
-  if (!Array.isArray(services) || services.length === 0) {
-    throw new ApiError(400, "services must be a non-empty array");
+  // services arrives as JSON string from multipart form e.g. '["id1","id2"]'
+  let parsedServices = services;
+  if (typeof services === "string") {
+    try {
+      parsedServices = JSON.parse(services);
+    } catch {
+      parsedServices = [services];
+    }
+  }
+
+  if (!Array.isArray(parsedServices) || parsedServices.length === 0) {
+    throw new ApiError(400, "services must be a non-empty array of service IDs");
+  }
+
+  // validate all sent IDs exist in the Service collection
+  const validServices = await Service.find({ _id: { $in: parsedServices } }).select("_id");
+  if (validServices.length !== parsedServices.length) {
+    throw new ApiError(400, "One or more service IDs are invalid");
   }
 
   const parsedLng = parseFloat(longitude);
@@ -85,6 +104,15 @@ const registerPartner = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Email is already registered");
   }
 
+  // upload service images to cloudinary
+  const serviceImages = [];
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const uploaded = await uploadOnCloudinary(file.path);
+      if (uploaded) serviceImages.push(uploaded.secure_url);
+    }
+  }
+
   const user = await User.create({
     name: fullName,
     email,
@@ -95,17 +123,18 @@ const registerPartner = asyncHandler(async (req, res) => {
   const partner = await Partner.create({
     user: user._id,
     businessName,
+    description: description?.trim() || "",
     location: {
       type: "Point",
       coordinates: [parsedLng, parsedLat],
     },
-    services,
+    services: parsedServices,
+    serviceImages,
   });
 
-  const partnerData = await Partner.findById(partner._id).populate(
-    "user",
-    "-password"
-  );
+  const partnerData = await Partner.findById(partner._id)
+    .populate("user", "-password")
+    .populate("services", "name");
 
   return res
     .status(201)

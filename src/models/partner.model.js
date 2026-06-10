@@ -16,7 +16,9 @@ const partnerSchema = new mongoose.Schema(
         required: true,
       },
     },
-    services: [{ type: String, trim: true }],
+    services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
+    description: { type: String, trim: true },
+    serviceImages: [{ type: String }],
     isApproved: { type: Boolean, default: false },
   },
   { timestamps: true }
