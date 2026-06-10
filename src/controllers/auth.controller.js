@@ -4,6 +4,19 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+const generateRefreshTokenAndAccessToken = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  return { accessToken, refreshToken };
+};
+
 const registerCustomer = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -99,4 +112,61 @@ const registerPartner = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, "Partner registered successfully", partnerData));
 });
 
-export { registerCustomer, registerPartner };
+const login = asyncHandler(async (req, res) => {
+  const { email, password, rememberMe = false } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, "Account is deactivated");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  const { accessToken, refreshToken } =
+    await generateRefreshTokenAndAccessToken(user._id);
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  // rememberMe = true  → refresh token cookie persists for 30 days
+  // rememberMe = false → refresh token cookie is a session cookie (cleared on browser close)
+  const refreshTokenCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    ...(rememberMe && { maxAge: 30 * 24 * 60 * 60 * 1000 }), // 30 days
+  };
+
+  const accessTokenCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000, // always 1 day
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, accessTokenCookieOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
+    .json(
+      new ApiResponse(200, "Login successful", {
+        user: loggedInUser,
+        accessToken,
+        refreshToken,
+      })
+    );
+});
+
+export { registerCustomer, registerPartner, login };
