@@ -1,0 +1,1427 @@
+{
+  "heroServices": [
+    {
+      "id": 1,
+      "name": "Oil Change",
+      "slug": "oil-change",
+      "description": "Fast engine oil replacement for smooth driving."
+    },
+    {
+      "id": 2,
+      "name": "Brake Service",
+      "slug": "brake-service",
+      "description": "Brake inspection and replacement for safe stops."
+    },
+    {
+      "id": 3,
+      "name": "Tire Rotation",
+      "slug": "tire-rotation",
+      "description": "Rotate tires for longer life and better grip."
+    },
+    {
+      "id": 4,
+      "name": "Battery Check",
+      "slug": "battery-check",
+      "description": "Complete battery health and charging system test."
+    },
+    {
+      "id": 5,
+      "name": "AC Service",
+      "slug": "ac-service",
+      "description": "Air conditioning cleaning and recharge."
+    },
+    {
+      "id": 6,
+      "name": "Engine Tune-Up",
+      "slug": "engine-tune-up",
+      "description": "Comprehensive engine performance optimization."
+    }
+  ],
+  "locations": [
+    {
+      "id": 1,
+      "name": "F-8 Markaz, Islamabad",
+      "description": "Mehmand Car Garage"
+    },
+    {
+      "id": 2,
+      "name": "G-10 Markaz, Islamabad",
+      "description": "Auto Care Workshop"
+    },
+    {
+      "id": 3,
+      "name": "Blue Area, Islamabad",
+      "description": "Premium Repair Center"
+    }
+  ],
+  "faq": [
+    {
+      "id": 1,
+      "question": "How do I book a service?",
+      "answer": "Select a service, choose a workshop, pick a date, and confirm your booking."
+    },
+    {
+      "id": 2,
+      "question": "What payment methods are accepted?",
+      "answer": "We accept credit/debit cards, mobile wallet payments, and cash on delivery."
+    },
+    {
+      "id": 3,
+      "question": "Can I cancel a booking?",
+      "answer": "Yes, you can cancel bookings before the scheduled start time from your dashboard."
+    },
+    {
+      "id": 4,
+      "question": "How do I become a partner?",
+      "answer": "Fill the partner registration form and our team will review your application."
+    }
+  ],
+  "contact": [
+    {
+      "name": "adeel",
+      "email": "a@gmail.com",
+      "message": "testing description ...",
+      "id": 3
+    }
+  ],
+  "about": {
+    "headline": "FixNGo makes car care easy.",
+    "description": "Find trusted mechanics and book service appointments for your vehicle with fast support and secure payments."
+  },
+  "partnerServiceOptions": [
+    {
+      "id": 1,
+      "name": "Engine Oil"
+    },
+    {
+      "id": 2,
+      "name": "Brake Service"
+    },
+    {
+      "id": 3,
+      "name": "Tire Replacement"
+    },
+    {
+      "id": 4,
+      "name": "Battery Service"
+    },
+    {
+      "id": 5,
+      "name": "Oil Filter"
+    },
+    {
+      "id": 6,
+      "name": "Air Filter"
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "name": "All",
+      "subServices": [
+        {
+          "id": 1,
+          "name": "Tire Rotation",
+          "price": "2500",
+          "duration": "45 min"
+        },
+        {
+          "id": 2,
+          "name": "Oil Change",
+          "price": "3500",
+          "duration": "60 min"
+        },
+        {
+          "id": 3,
+          "name": "AC Service",
+          "price": "2800",
+          "duration": "50 min"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Tire Rotation",
+      "subServices": [
+        {
+          "id": 4,
+          "name": "Tire Rotation",
+          "price": "1200",
+          "duration": "30 min"
+        },
+        {
+          "id": 5,
+          "name": "Wheel Alignment",
+          "price": "2200",
+          "duration": "40 min"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Brake Service",
+      "subServices": [
+        {
+          "id": 6,
+          "name": "Brake Pad Replacement",
+          "price": "4200",
+          "duration": "90 min"
+        },
+        {
+          "id": 7,
+          "name": "Brake Fluid Change",
+          "price": "1800",
+          "duration": "35 min"
+        }
+      ]
+    }
+  ],
+  "partners": [
+    {
+      "id": 26,
+      "name": "Aziz Autos Islamabad (Chevrolet Specialist)",
+      "address": "I & T Centre, Shop 6, Plot 45, G-10 Markaz, G-10, Islamabad 44000",
+      "mapUrl": "https://maps.google.com/?q=Aziz+Autos+Islamabad",
+      "phone": "+92 333 5171833",
+      "services": [
+        {
+          "serviceId": 63,
+          "serviceName": "Chevrolet Specialist Mechanic"
+        },
+        {
+          "serviceId": 64,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Chevrolet Rawalpindi Auto Workshop",
+      "address": "Near Old Daewoo Adda, Pir Wadhai Mor, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Chevrolet+Rawalpindi+Auto+Workshop",
+      "phone": "+92 333 5474325",
+      "services": [
+        {
+          "serviceId": 65,
+          "serviceName": "Chevrolet Specialist Mechanic"
+        },
+        {
+          "serviceId": 66,
+          "serviceName": "Engine Repair"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Chevrolet Islamabad Motors",
+      "address": "89, St #10, I-9 Industrial Area, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Chevrolet+Islamabad+Motors",
+      "phone": "+92 51 4431111",
+      "services": [
+        {
+          "serviceId": 67,
+          "serviceName": "Chevrolet Authorized Service"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Hybrid DOC Hybrid Car Solutions",
+      "address": "Near Save Mart National Police Foundation, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Hybrid+DOC+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 68,
+          "serviceName": "Hybrid Car Repair"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Shahid Car Mechanic",
+      "address": "G-10/4, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Shahid+Car+Mechanic+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 69,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Benz Auto Workshop",
+      "address": "Peshawar Rd, Mohammadabad, Westridge, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Benz+Auto+Workshop+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 70,
+          "serviceName": "Auto Body Shop"
+        },
+        {
+          "serviceId": 71,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Abdul Razzaq Auto Electrician & Spare Parts",
+      "address": "Peshawar Rd, Purani Chowki, Naseerabad, Rawalpindi 46500",
+      "mapUrl": "https://maps.google.com/?q=Abdul+Razzaq+Auto+Electrician+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 72,
+          "serviceName": "Auto Electrician"
+        },
+        {
+          "serviceId": 73,
+          "serviceName": "Spare Parts"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "name": "EFI AUTO WORKSHOP RAWALPINDI",
+      "address": "Shop 01, Umair Plaza, 6th Rd, Block A Satellite Town, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=EFI+Auto+Workshop+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 74,
+          "serviceName": "EFI Tuning"
+        },
+        {
+          "serviceId": 75,
+          "serviceName": "Auto Electrical"
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Ghousia Autos Workshop",
+      "address": "Junaid Abbasi Auto Oil Shop, Abbasi Rd, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Ghousia+Autos+Workshop+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 76,
+          "serviceName": "Oil Change"
+        },
+        {
+          "serviceId": 77,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Car Made Auto Decoration",
+      "address": "Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Car+made+auto+car+decoration+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 78,
+          "serviceName": "Car Decoration"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Rasheed Auto Workshop",
+      "address": "Islamabad, Islamabad Capital Territory",
+      "mapUrl": "https://maps.google.com/?q=Rasheed+Auto+Workshop+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 79,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Motor Zone",
+      "address": "Marquee Rd, G-12, Islamabad, Islamabad Capital Territory",
+      "mapUrl": "https://maps.google.com/?q=Motor+zone+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 80,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Sana Auto Workshop",
+      "address": "Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Sana+Auto+Workshop+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 81,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Kashmir Auto Repair Ranch",
+      "address": "79 Hill View Road, Bahria Safari Valley Sector A, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=Kashmir+Auto+Repair+Ranch+Rawalpindi",
+      "phone": "+92 333 3005272",
+      "services": [
+        {
+          "serviceId": 82,
+          "serviceName": "Tuning"
+        },
+        {
+          "serviceId": 83,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Honda Quick Service & Spare Parts Centre",
+      "address": "Main Murree Road, Naya Mohalla, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Honda+Quick+Service+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 84,
+          "serviceName": "Honda Service"
+        },
+        {
+          "serviceId": 85,
+          "serviceName": "Spare Parts"
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Bismillah Autos",
+      "address": "Murree Rd, Waris Khan, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Bismillah+Autos+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 86,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Sabir Honda Service",
+      "address": "Allahabad, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Sabir+Honda+Service+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 87,
+          "serviceName": "Honda Service"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Universal Car AC",
+      "address": "G-8, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Universal+Car+AC+Islamabad",
+      "phone": "+92 300 5500484",
+      "services": [
+        {
+          "serviceId": 88,
+          "serviceName": "Car AC Filling"
+        },
+        {
+          "serviceId": 89,
+          "serviceName": "Car AC Installation"
+        },
+        {
+          "serviceId": 90,
+          "serviceName": "Car AC Repair"
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Awan Car AC and Heater Repairing",
+      "address": "Chour Harpal, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Awan+Car+AC+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 91,
+          "serviceName": "Car AC Repair"
+        },
+        {
+          "serviceId": 92,
+          "serviceName": "Heater Repair"
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Perfect Car Wash",
+      "address": "Near Motorway Chowk, Peshawar Rd, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Perfect+Car+Wash+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 93,
+          "serviceName": "Car Wash"
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Auto Shine Car Wash and Detail",
+      "address": "Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Auto+Shine+Car+Wash+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 94,
+          "serviceName": "Car Wash"
+        },
+        {
+          "serviceId": 95,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Bilal Car Wash & Detailing",
+      "address": "Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=Bilal+car+wash+Detailing+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 96,
+          "serviceName": "Car Wash"
+        },
+        {
+          "serviceId": 97,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "name": "Free Oil Change Service Cmsp",
+      "address": "Irfan Plaza, Qadeer City Center, F10 Markaz, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Free+Oil+Change+Service+Cmsp+Islamabad",
+      "phone": "+92 303 5082282",
+      "services": [
+        {
+          "serviceId": 98,
+          "serviceName": "Oil Change"
+        },
+        {
+          "serviceId": 99,
+          "serviceName": "Filter Change"
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "name": "Liqui Moly (NH Traders)",
+      "address": "Shop # 1A, A1 Plaza, F-10 Markaz, Islamabad 44000",
+      "mapUrl": "https://maps.google.com/?q=Liqui+Moly+NH+Traders+Islamabad",
+      "phone": "+92 345 5912364",
+      "services": [
+        {
+          "serviceId": 100,
+          "serviceName": "Oil Change"
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "name": "One Stop Auto Solutions",
+      "address": "G-11, Islamabad / Golra, Service road, G-12, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=One+Stop+Auto+Solutions+Islamabad",
+      "phone": "+92 333 5111085",
+      "services": [
+        {
+          "serviceId": 101,
+          "serviceName": "Car Repair and Maintenance"
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "name": "Walli Baba Autos (Daewoo Specialist)",
+      "address": "Plot # 80, St # 4, I-10/3 Industrial Area, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Walli+Baba+Autos+Islamabad",
+      "phone": "+92 300 9144049",
+      "services": [
+        {
+          "serviceId": 102,
+          "serviceName": "Daewoo Specialist Mechanic"
+        },
+        {
+          "serviceId": 103,
+          "serviceName": "Engine Overhaul"
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "name": "E Car Tech",
+      "address": "3 Service Rd, Shah Khalid Colony, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=E+CAR+TECH+Rawalpindi",
+      "phone": "+92 333 1539706",
+      "services": [
+        {
+          "serviceId": 104,
+          "serviceName": "Mechanic"
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "name": "Rafiq Automobile Engineering & Shock Specialist",
+      "address": "Peshawar Rd, Naseerabad, Rawalpindi 46000",
+      "mapUrl": "https://maps.google.com/?q=Rafiq+Automobile+Engineering+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 105,
+          "serviceName": "Suspension Repair"
+        },
+        {
+          "serviceId": 106,
+          "serviceName": "Shock Absorber Replacement"
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "name": "Punjab Auto Workshop RWP",
+      "address": "Nasser Abad, Peshawar Rd, near Punjab College, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Punjab+Auto+Workshop+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 107,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "name": "Burraq Autos",
+      "address": "Chaudary Market, Glass Factory Rd, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Burraq+Autos+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 108,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "name": "Ashraf Autos",
+      "address": "Chah Sultan Rd, opp. P.S.O Pump, Chah Sultan, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Ashraf+Autos+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 109,
+          "serviceName": "Auto Parts"
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "name": "New Japan Autos",
+      "address": "Chah Sultan Rd, Chah Sultan, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=New+Japan+autos+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 110,
+          "serviceName": "Auto Repair"
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "name": "Margalla Engineers",
+      "address": "Dhok Syedan Rd, Bakra Mandi, Kamalabad, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Margalla+Engineers+Rawalpindi",
+      "phone": "+92 300 8551685",
+      "services": [
+        {
+          "serviceId": 111,
+          "serviceName": "HVAC Contractor"
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "name": "Mughal Car Cool",
+      "address": "Shop No, 306/A R.A.Bazar Rd, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Mughal+Car+Cool+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 112,
+          "serviceName": "Car AC Service"
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "name": "Sunny Car Cooling",
+      "address": "Kashmir Rd, Saddar, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Sunny+Car+Cooling+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 113,
+          "serviceName": "Car AC Service"
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Auto Extreme Pakistan",
+      "address": "Sowan Camp, Main Grand Trunk Rd, opp. KIA Motors, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Auto+Extreme+Pakistan+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 114,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "name": "TopCare",
+      "address": "Plot No: 8, Defence Rd, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=TopCare+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 115,
+          "serviceName": "Car Wash"
+        },
+        {
+          "serviceId": 116,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "name": "Mobil Auto Spa",
+      "address": "Mobil 1 House, Peshawar Rd, opposite Kohinoor Mills, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Mobil+Auto+Spa+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 117,
+          "serviceName": "Car Wash"
+        },
+        {
+          "serviceId": 118,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "name": "The Garage",
+      "address": "B 106 Commercial Market Rd, B-Block Satellite Town, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=The+Garage+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 119,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "name": "Gloss Treatment Auto",
+      "address": "Shop 471, 6th Rd, D Block Satellite Town, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=Gloss+Treatment+Auto+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 120,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "name": "Detailing Hub",
+      "address": "Shop # 87 Cricket Stadium Exit Gate, Shamsabad, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Detailing+Hub+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 121,
+          "serviceName": "Detailing"
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "name": "Drive Clean",
+      "address": "Airport Rd, Faisal Colony, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=DRIVE+CLEAN+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 122,
+          "serviceName": "Car Wash"
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "name": "QASWA Car Wash & Cleaners",
+      "address": "Pakistan Town Phase 1, Pakistan Town, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=QASWA+Car+Wash+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 123,
+          "serviceName": "Car Wash"
+        }
+      ]
+    },
+    {
+      "id": 69,
+      "name": "ZIC Service Centre",
+      "address": "Gammon House, near Peshawar Rd, Chour Harpal, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=ZIC+Service+Centre+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 124,
+          "serviceName": "Oil Change"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "name": "RestorFX Center RWP",
+      "address": "Airport Rd, Service Rd, Shah Khalid Colony, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=RestorFX+Center+RWP",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 125,
+          "serviceName": "Car Detailing"
+        },
+        {
+          "serviceId": 126,
+          "serviceName": "Paint Correction"
+        }
+      ]
+    },
+    {
+      "id": 71,
+      "name": "Car Wash Services",
+      "address": "Chaklala Road, Dhoke Elahi Baksh, Rawalpindi, Punjab 46000",
+      "mapUrl": "https://maps.google.com/?q=Car+Wash+Services+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 127,
+          "serviceName": "Car Wash"
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "name": "Quick Fill Car Wash",
+      "address": "Shamsabad, Rawalpindi, Punjab",
+      "mapUrl": "https://maps.google.com/?q=Quick+Fill+Car+Wash+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 128,
+          "serviceName": "Car Wash"
+        }
+      ]
+    },
+    {
+      "id": 73,
+      "name": "Auto Tron Motors (ATM)",
+      "address": "G.T. Rd, Islamabad, Islamabad Capital Territory",
+      "mapUrl": "https://maps.google.com/?q=Auto+Tron+Motors+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 129,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "name": "Owais Auto Mobiles",
+      "address": "G-8 Markaz G-8, Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Owais+Auto+Mobiles+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 130,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 75,
+      "name": "Garage 115",
+      "address": "G4QC+R5 Islamabad, Islamabad Capital Territory 46000",
+      "mapUrl": "https://maps.google.com/?q=Garage+115+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 131,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "name": "DW Garage Auto Workshop",
+      "address": "Service Rd N, E-11, Islamabad, Islamabad Capital Territory",
+      "mapUrl": "https://maps.google.com/?q=DW+Garage+Auto+Workshop+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 132,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 77,
+      "name": "Smart Auto Workshop",
+      "address": "Plot # 106, Auto Market, Street 4, I-10/3, Islamabad 44000",
+      "mapUrl": "https://maps.google.com/?q=Smart+Auto+Workshop+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 133,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 78,
+      "name": "ANAS AUTOS F-10",
+      "address": "Shop#13, Basement 1-C Plaza, F-10 Markaz, Islamabad 44000",
+      "mapUrl": "https://maps.google.com/?q=ANAS+AUTOS+F-10+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 134,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 79,
+      "name": "Autocrew Islamabad",
+      "address": "Street 4, I-10/3, Islamabad, Islamabad Capital Territory",
+      "mapUrl": "https://maps.google.com/?q=Autocrew+Islamabad",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 135,
+          "serviceName": "General Repair"
+        }
+      ]
+    },
+    {
+      "id": 80,
+      "name": "Fakhri Car Decoration Centre",
+      "address": "Posh Arcade, Rohtas Rd, G-9 Markaz, Islamabad 44090",
+      "mapUrl": "https://maps.google.com/?q=Fakhri+Car+Decoration+Centre+Islamabad",
+      "phone": "+92 301 5111562",
+      "services": [
+        {
+          "serviceId": 136,
+          "serviceName": "Car Decoration"
+        },
+        {
+          "serviceId": 137,
+          "serviceName": "Auto Machine Shop"
+        }
+      ]
+    },
+    {
+      "id": 81,
+      "name": "Islamabad Car AC Installation",
+      "address": "Lower Ground 14 A Rehmat Center, I-8 Markaz, Islamabad 46000",
+      "mapUrl": "https://maps.google.com/?q=Islamabad+Car+AC+Installation",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 138,
+          "serviceName": "Car AC Installation"
+        }
+      ]
+    },
+    {
+      "id": 82,
+      "name": "Malik Enterprises (Tyres & Rims)",
+      "address": "Kashmir Road, Saddar, Rawalpindi",
+      "mapUrl": "https://maps.google.com/?q=Malik+Enterprises+Tyres+Rawalpindi",
+      "phone": "+92 300 0000000",
+      "services": [
+        {
+          "serviceId": 139,
+          "serviceName": "Tyre Shop"
+        },
+        {
+          "serviceId": 140,
+          "serviceName": "Rims"
+        }
+      ]
+    },
+    {
+      "id": 83,
+      "name": "Sattar Automobile Islamabad",
+      "address": "PWD Society, Rawalpindi/Islamabad",
+      "mapUrl": "https://maps.google.com/?q=Sattar+Automobile+Islamabad",
+      "phone": "+92 312 9449000",
+      "services": [
+        {
+          "serviceId": 141,
+          "serviceName": "Mechanical Repair"
+        },
+        {
+          "serviceId": 142,
+          "serviceName": "Electrical Repair"
+        },
+        {
+          "serviceId": 143,
+          "serviceName": "Denting & Painting"
+        }
+      ]
+    }
+  ],
+  "customerQuestions": [
+    {
+      "question": "asked a testing question.",
+      "id": 1
+    },
+    {
+      "question": "",
+      "id": 2
+    },
+    {
+      "question": "",
+      "id": 3
+    },
+    {
+      "question": "",
+      "id": 4
+    },
+    {
+      "question": "",
+      "id": 5
+    },
+    {
+      "question": "",
+      "id": 6
+    },
+    {
+      "question": "",
+      "id": 7
+    }
+  ],
+  "customerBookings": [
+    {
+      "id": 101,
+      "profileImage": "/Images/hero-image.png",
+      "shopName": "Detail Kings",
+      "status": "Scheduled",
+      "partner": "Detail Kings Workshop",
+      "dateTime": "24 Feb 2025 09:00 AM",
+      "location": "H-8 Sector, Islamabad",
+      "price": "3000",
+      "rating": 5,
+      "category": "Interior Cleaning"
+    },
+    {
+      "id": 102,
+      "profileImage": "/Images/hero-image.png",
+      "shopName": "AutoCare Plus",
+      "status": "Ongoing",
+      "partner": "AutoCare Plus",
+      "dateTime": "26 Feb 2025 02:00 PM",
+      "location": "G-10 Markaz, Islamabad",
+      "price": "4500",
+      "rating": 4,
+      "category": "Brake Service"
+    }
+  ],
+  "customerTransactions": [
+    {
+      "id": 1,
+      "name": "QuickLube",
+      "date": "20 Apr 2025, 06:55 PM",
+      "amount": "PKR 4,500",
+      "method": "Visa",
+      "type": "debit"
+    },
+    {
+      "id": 2,
+      "name": "AutoCare Workshop",
+      "date": "15 Apr 2025, 02:30 PM",
+      "amount": "PKR 2,800",
+      "method": "Mastercard",
+      "type": "debit"
+    },
+    {
+      "id": 3,
+      "name": "Wallet Top-up",
+      "date": "10 Apr 2025, 11:00 AM",
+      "amount": "PKR 10,000",
+      "method": "JazzCash",
+      "type": "credit"
+    }
+  ],
+  "customerWallet": {
+    "balance": 524,
+    "currency": "PKR",
+    "status": "Active",
+    "payments": {
+      "all": [
+        {
+          "id": 1,
+          "name": "QuickLube",
+          "date": "20 Apr 2025, 06:55 PM",
+          "amount": "PKR 4,500",
+          "method": "Visa"
+        },
+        {
+          "id": 2,
+          "name": "AutoCare Workshop",
+          "date": "15 Apr 2025, 02:30 PM",
+          "amount": "PKR 2,800",
+          "method": "Mastercard"
+        }
+      ],
+      "regular": [
+        {
+          "id": 1,
+          "name": "QuickLube",
+          "date": "20 Apr 2025, 06:55 PM",
+          "amount": "PKR 4,500",
+          "method": "Visa"
+        }
+      ]
+    }
+  },
+  "customerProfile": {
+    "fullName": "Ali Khan",
+    "email": "ali.khan@gmail.com",
+    "phone": "+92 301 9876542",
+    "location": "Islamabad, Pakistan"
+  },
+  "customerVehicles": [
+    {
+      "id": 1,
+      "image": "/Images/hero-image.png",
+      "name": "Honda Civic",
+      "year": 2026,
+      "variant": "Sedan",
+      "regCity": "Islamabad",
+      "licensePlate": "2022",
+      "fuelType": "Petrol"
+    },
+    {
+      "id": 2,
+      "image": "/Images/hero-image.png",
+      "name": "Toyota Corolla",
+      "year": "2020",
+      "variant": "Sedan",
+      "regCity": "Lahore",
+      "licensePlate": "XYZ-456",
+      "fuelType": "Diesel"
+    }
+  ],
+  "customerAddresses": [
+    {
+      "id": 1,
+      "Tag": "Home",
+      "address": "House 12, Street 5, Islamabad",
+      "phone": "+92 3XX XXX XXXX"
+    },
+    {
+      "id": 2,
+      "Tag": "Office",
+      "address": "F-8 Markaz, Islamabad",
+      "phone": "+92 3XX XXX XXXX"
+    }
+  ],
+  "customerPaymentMethods": [
+    {
+      "id": 1,
+      "cardHolderName": "Adeel Abid",
+      "cardNumber": "4859 4859 4859 4859",
+      "expiryDate": "12/26",
+      "Tag": "Default"
+    },
+    {
+      "id": 2,
+      "cardHolderName": "Adeel Abid",
+      "cardNumber": "4859 4859 4859 4859",
+      "expiryDate": "12/24",
+      "Tag": "Default"
+    }
+  ],
+  "partnerDashboardStats": {
+    "earnings": "23,600",
+    "activeJobs": 12,
+    "newRequests": 5,
+    "rating": 4.9
+  },
+  "partnerRequests": [
+    {
+      "id": 301,
+      "businessName": "Detail Kings",
+      "owner": "Ayesha Babar",
+      "serviceCategory": "Interior Cleaning",
+      "submittedOn": "10 May 2025",
+      "location": "H-8 Sector, Islamabad",
+      "status": "Pending",
+      "details": "Full vehicle detailing including shampoo and polish."
+    },
+    {
+      "id": 302,
+      "businessName": "AutoCare Plus",
+      "owner": "Imran Ali",
+      "serviceCategory": "Brake Service",
+      "submittedOn": "09 May 2025",
+      "location": "G-10 Markaz, Islamabad",
+      "status": "Approved",
+      "details": "Brake pad replacement with free inspection."
+    }
+  ],
+  "partnerActiveJobs": [
+    {
+      "id": 401,
+      "customerName": "Sara Ahmed",
+      "service": "Engine Oil Change",
+      "scheduledAt": "22 May 2025, 10:00 AM",
+      "amount": "PKR 3,200",
+      "status": "In progress",
+      "address": "F-8 Markaz, Islamabad"
+    },
+    {
+      "id": 402,
+      "customerName": "Omar Riaz",
+      "service": "Battery Replacement",
+      "scheduledAt": "22 May 2025, 12:30 PM",
+      "amount": "PKR 5,000",
+      "status": "Scheduled",
+      "address": "Blue Area, Islamabad"
+    }
+  ],
+  "partnerRatings": {
+    "average": 4.8,
+    "count": 128,
+    "breakdown": [
+      {
+        "stars": 5,
+        "count": 90
+      },
+      {
+        "stars": 4,
+        "count": 24
+      },
+      {
+        "stars": 3,
+        "count": 8
+      },
+      {
+        "stars": 2,
+        "count": 4
+      },
+      {
+        "stars": 1,
+        "count": 2
+      }
+    ],
+    "recentReviews": [
+      {
+        "id": 1,
+        "customer": "Amina Khan",
+        "text": "Great service and fast response.",
+        "rating": 5
+      },
+      {
+        "id": 2,
+        "customer": "Bilal Shah",
+        "text": "Professional team, very satisfied.",
+        "rating": 4
+      }
+    ]
+  },
+  "partnerServices": [
+    {
+      "id": 501,
+      "title": "Interior Cleaning",
+      "description": "Deep cleaning for seats and carpets.",
+      "rate": "3000",
+      "duration": "90 min",
+      "status": "Active"
+    },
+    {
+      "id": 502,
+      "title": "Battery Replacement",
+      "description": "Battery swap with quality replacement.",
+      "rate": "4500",
+      "duration": "60 min",
+      "status": "Active"
+    },
+    {
+      "id": 503,
+      "title": "Brake Repair",
+      "description": "Brake inspection and pad replacement.",
+      "rate": "3800",
+      "duration": "75 min",
+      "status": "Inactive"
+    }
+  ],
+  "partnerPaymentOverview": {
+    "totalEarnings": "PKR 128,400",
+    "pendingPayout": "PKR 12,200",
+    "paidOut": "PKR 116,200"
+  },
+  "partnerPayouts": [
+    {
+      "id": 1,
+      "date": "18 May 2025",
+      "amount": "PKR 8,700",
+      "status": "Paid"
+    },
+    {
+      "id": 2,
+      "date": "15 May 2025",
+      "amount": "PKR 4,500",
+      "status": "Paid"
+    },
+    {
+      "id": 3,
+      "date": "12 May 2025",
+      "amount": "PKR 9,200",
+      "status": "Pending"
+    }
+  ],
+  "partnerProfile": {
+    "businessName": "Detail Kings",
+    "email": "detail.kings@example.com",
+    "phone": "+92 311 5566778",
+    "location": "H-8 Sector, Islamabad",
+    "servicesOffered": [
+      "Interior Cleaning",
+      "Battery Replacement",
+      "Brake Repair"
+    ],
+    "availability": "Open",
+    "status": "Verified",
+    "bankAccount": "Bank Alfalah 123456789"
+  },
+  "superadminStats": {
+    "totalUsers": 1200,
+    "activeCustomers": 870,
+    "activePartners": 220,
+    "serviceListings": 450
+  },
+  "superadminRequests": [
+    {
+      "id": 601,
+      "businessName": "Speedy Fix",
+      "owner": "Sadia Naveed",
+      "serviceCategory": "Auto Repair",
+      "submittedOn": "12 May 2025",
+      "location": "Blue Area, Islamabad",
+      "status": "Pending"
+    },
+    {
+      "id": 602,
+      "businessName": "Car Care Hub",
+      "owner": "Kamran Shah",
+      "serviceCategory": "Detailing",
+      "submittedOn": "13 May 2025",
+      "location": "G-11, Islamabad",
+      "status": "Approved"
+    }
+  ],
+  "superadminPartners": [
+    {
+      "id": 701,
+      "name": "Detail Kings",
+      "owner": "Ayesha Babar",
+      "location": "H-8 Sector, Islamabad",
+      "services": [
+        "Interior Cleaning",
+        "Battery Replacement"
+      ],
+      "status": "Verified"
+    },
+    {
+      "id": 702,
+      "name": "AutoCare Plus",
+      "owner": "Imran Ali",
+      "location": "G-10 Markaz, Islamabad",
+      "services": [
+        "Brake Service",
+        "Tire Rotation"
+      ],
+      "status": "Verified"
+    }
+  ],
+  "superadminServices": [
+    {
+      "id": 801,
+      "name": "Oil Change",
+      "category": "Maintenance",
+      "partnerCount": 45
+    },
+    {
+      "id": 802,
+      "name": "Brake Repair",
+      "category": "Safety",
+      "partnerCount": 32
+    },
+    {
+      "id": 803,
+      "name": "Tire Rotation",
+      "category": "Maintenance",
+      "partnerCount": 28
+    }
+  ],
+  "superadminProfile": {
+    "fullName": "Admin User",
+    "email": "admin@fixngo.com",
+    "role": "Superadmin"
+  }
+}
