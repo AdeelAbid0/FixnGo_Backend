@@ -1,10 +1,12 @@
 import { User } from "../models/user.model.js";
 import { Partner } from "../models/partner.model.js";
 import { Service } from "../models/service.model.js";
+import { PendingRegistration } from "../models/pendingRegistration.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { sendOtpEmail, sendPasswordResetOtpEmail } from "../utils/mailer.js";
 
 const generateRefreshTokenAndAccessToken = async (userId) => {
   const user = await User.findById(userId);
@@ -19,25 +21,46 @@ const generateRefreshTokenAndAccessToken = async (userId) => {
   return { accessToken, refreshToken };
 };
 
+const generateOtp = () => ({
+  otp: String(Math.floor(100000 + Math.random() * 900000)),
+  otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+});
+
 const registerCustomer = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
   if ([name, email, password].some((field) => !field || !field.trim())) {
     throw new ApiError(400, "name, email and password are required");
   }
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    throw new ApiError(409, "Email is already registered");
-  }
 
-  const user = await User.create({ name, email, password, role: "customer" });
+  const normalizedEmail = email.toLowerCase();
 
-  const createdUser = await User.findById(user._id).select("-password");
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (existingUser) throw new ApiError(409, "Email is already registered");
+
+  const { otp, otpExpiry } = generateOtp();
+
+  await PendingRegistration.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      email: normalizedEmail,
+      role: "customer",
+      otp,
+      otpExpiry,
+      data: { name, password },
+    },
+    { upsert: true, new: true }
+  );
+
+  await sendOtpEmail({ name, email: normalizedEmail, otp });
 
   return res
-    .status(201)
+    .status(200)
     .json(
-      new ApiResponse(201, "Customer registered successfully", createdUser)
+      new ApiResponse(
+        200,
+        "OTP sent to your email. Please verify to complete registration."
+      )
     );
 });
 
@@ -45,6 +68,7 @@ const registerPartner = asyncHandler(async (req, res) => {
   const {
     fullName,
     email,
+    password,
     phone,
     businessName,
     longitude,
@@ -54,14 +78,14 @@ const registerPartner = asyncHandler(async (req, res) => {
   } = req.body ?? {};
 
   if (
-    [fullName, email, phone, businessName].some(
+    [fullName, email, password, phone, businessName].some(
       (field) => !field || !field.trim()
     ) ||
     [longitude, latitude].some((field) => field == null)
   ) {
     throw new ApiError(
       400,
-      "fullName, email, phone, businessName, longitude and latitude are required"
+      "fullName, email, password, phone, businessName, longitude and latitude are required"
     );
   }
 
@@ -76,11 +100,15 @@ const registerPartner = asyncHandler(async (req, res) => {
   }
 
   if (!Array.isArray(parsedServices) || parsedServices.length === 0) {
-    throw new ApiError(400, "services must be a non-empty array of service IDs");
+    throw new ApiError(
+      400,
+      "services must be a non-empty array of service IDs"
+    );
   }
 
-  // validate all sent IDs exist in the Service collection
-  const validServices = await Service.find({ _id: { $in: parsedServices } }).select("_id");
+  const validServices = await Service.find({
+    _id: { $in: parsedServices },
+  }).select("_id");
   if (validServices.length !== parsedServices.length) {
     throw new ApiError(400, "One or more service IDs are invalid");
   }
@@ -99,12 +127,12 @@ const registerPartner = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid longitude or latitude values");
   }
 
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
-  if (existingUser) {
-    throw new ApiError(409, "Email is already registered");
-  }
+  const normalizedEmail = email.toLowerCase();
 
-  // upload service images to cloudinary
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (existingUser) throw new ApiError(409, "Email is already registered");
+
+  // Upload images to Cloudinary now so the URLs can be stored in pending
   const serviceImages = [];
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
@@ -113,32 +141,115 @@ const registerPartner = asyncHandler(async (req, res) => {
     }
   }
 
-  const user = await User.create({
-    name: fullName,
-    email,
-    phone,
-    role: "partner",
-  });
+  const { otp, otpExpiry } = generateOtp();
 
-  const partner = await Partner.create({
-    user: user._id,
-    businessName,
-    description: description?.trim() || "",
-    location: {
-      type: "Point",
-      coordinates: [parsedLng, parsedLat],
+  await PendingRegistration.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      email: normalizedEmail,
+      role: "partner",
+      otp,
+      otpExpiry,
+      data: {
+        fullName,
+        password,
+        phone,
+        businessName,
+        longitude: parsedLng,
+        latitude: parsedLat,
+        services: parsedServices,
+        description: description?.trim() || "",
+        serviceImages,
+      },
     },
-    services: parsedServices,
-    serviceImages,
-  });
+    { upsert: true, new: true }
+  );
 
-  const partnerData = await Partner.findById(partner._id)
-    .populate("user", "-password")
-    .populate("services", "name");
+  await sendOtpEmail({ name: fullName, email: normalizedEmail, otp });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "OTP sent to your email. Please verify to complete registration."
+      )
+    );
+});
+
+const verifyOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, "Email and OTP are required");
+  }
+
+  const normalizedEmail = email.toLowerCase();
+  const pending = await PendingRegistration.findOne({ email: normalizedEmail });
+
+  if (!pending) {
+    throw new ApiError(404, "No pending registration found for this email");
+  }
+
+  if (new Date() > pending.otpExpiry) {
+    await PendingRegistration.deleteOne({ email: normalizedEmail });
+    throw new ApiError(400, "OTP has expired. Please register again");
+  }
+
+  if (pending.otp !== String(otp)) {
+    throw new ApiError(400, "Invalid OTP");
+  }
+
+  const { role, data } = pending;
+  let responseData;
+
+  if (role === "customer") {
+    const user = await User.create({
+      name: data.name,
+      email: normalizedEmail,
+      password: data.password,
+      role: "customer",
+    });
+    responseData = await User.findById(user._id).select(
+      "-password -refreshToken"
+    );
+  } else {
+    const user = await User.create({
+      name: data.fullName,
+      email: normalizedEmail,
+      phone: data.phone,
+      password: data.password,
+      role: "partner",
+    });
+
+    const partner = await Partner.create({
+      user: user._id,
+      businessName: data.businessName,
+      description: data.description,
+      location: {
+        type: "Point",
+        coordinates: [data.longitude, data.latitude],
+      },
+      services: data.services,
+      serviceImages: data.serviceImages,
+    });
+
+    responseData = await Partner.findById(partner._id)
+      .populate("user", "-password -refreshToken")
+      .populate("services", "name");
+  }
+
+  await PendingRegistration.deleteOne({ email: normalizedEmail });
 
   return res
     .status(201)
-    .json(new ApiResponse(201, "Partner registered successfully", partnerData));
+    .json(
+      new ApiResponse(
+        201,
+        "Email verified. Registration complete. You can now log in.",
+        responseData
+      )
+    );
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -175,14 +286,14 @@ const login = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-    ...(rememberMe && { maxAge: 30 * 24 * 60 * 60 * 1000 }), // 30 days
+    ...(rememberMe && { maxAge: 30 * 24 * 60 * 60 * 1000 }),
   };
 
   const accessTokenCookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-    maxAge: 24 * 60 * 60 * 1000, // always 1 day
+    maxAge: 24 * 60 * 60 * 1000,
   };
 
   return res
@@ -198,4 +309,166 @@ const login = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerCustomer, registerPartner, login };
+const resendOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const normalizedEmail = email.toLowerCase();
+
+  const pending = await PendingRegistration.findOne({ email: normalizedEmail });
+  if (!pending) {
+    throw new ApiError(404, "No pending registration found for this email");
+  }
+
+  const { otp, otpExpiry } = generateOtp();
+
+  pending.otp = otp;
+  pending.otpExpiry = otpExpiry;
+  await pending.save();
+
+  const name =
+    pending.role === "partner" ? pending.data.fullName : pending.data.name;
+  await sendOtpEmail({ name, email: normalizedEmail, otp });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "A new OTP has been sent to your email."));
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user) throw new ApiError(404, "No account found with this email");
+
+  const { otp, otpExpiry } = generateOtp();
+
+  user.resetOtp = otp;
+  user.resetOtpExpiry = otpExpiry;
+  user.resetOtpVerified = false;
+  await user.save({ validateBeforeSave: false });
+
+  await sendPasswordResetOtpEmail({
+    name: user.name,
+    email: normalizedEmail,
+    otp,
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "OTP sent to your email. Please verify to reset your password."
+      )
+    );
+});
+
+const resendForgotPasswordOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) throw new ApiError(400, "Email is required");
+
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user) throw new ApiError(404, "No account found with this email");
+
+  const { otp, otpExpiry } = generateOtp();
+
+  user.resetOtp = otp;
+  user.resetOtpExpiry = otpExpiry;
+  user.resetOtpVerified = false;
+  await user.save({ validateBeforeSave: false });
+
+  await sendPasswordResetOtpEmail({
+    name: user.name,
+    email: normalizedEmail,
+    otp,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "A new OTP has been sent to your email."));
+});
+
+const verifyForgotPasswordOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) throw new ApiError(400, "Email and OTP are required");
+
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user || !user.resetOtp) {
+    throw new ApiError(400, "No password reset request found for this email");
+  }
+
+  if (new Date() > user.resetOtpExpiry) {
+    user.resetOtp = undefined;
+    user.resetOtpExpiry = undefined;
+    user.resetOtpVerified = false;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(400, "OTP has expired. Please request a new one");
+  }
+
+  if (user.resetOtp !== String(otp)) {
+    throw new ApiError(400, "Invalid OTP");
+  }
+
+  user.resetOtpVerified = true;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "OTP verified. You can now reset your password.")
+    );
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (!user || !user.resetOtpVerified) {
+    throw new ApiError(
+      400,
+      "Please verify your OTP before resetting the password"
+    );
+  }
+
+  user.password = password;
+  user.resetOtp = undefined;
+  user.resetOtpExpiry = undefined;
+  user.resetOtpVerified = false;
+  await user.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Password reset successful. You can now log in.")
+    );
+});
+
+export {
+  registerCustomer,
+  registerPartner,
+  verifyOtp,
+  resendOtp,
+  login,
+  forgotPassword,
+  resendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetPassword,
+};
