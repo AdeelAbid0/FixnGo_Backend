@@ -4,42 +4,59 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const addServices = asyncHandler(async (req, res) => {
-  const { services } = req.body ?? {};
+  const { name, category, duration, price } = req.body ?? {};
 
-  if (!Array.isArray(services) || services.length === 0) {
-    throw new ApiError(400, "services must be a non-empty array of names");
+  if (
+    !name?.trim() ||
+    !category?.trim() ||
+    !duration?.trim() ||
+    price === undefined ||
+    price === null
+  ) {
+    throw new ApiError(400, "name, category, duration, and price are required");
   }
 
-  const docs = services.map((name) => {
-    if (typeof name !== "string" || !name.trim()) {
-      throw new ApiError(400, "Each service must be a non-empty string");
-    }
-    return { name: name.trim() };
-  });
+  if (typeof price !== "number" || price < 0) {
+    throw new ApiError(400, "price must be a non-negative number");
+  }
 
-  // insertMany with ordered:false so one duplicate doesn't block the rest
-  const result = await Service.insertMany(docs, {
-    ordered: false,
-    rawResult: true,
-  }).catch((err) => {
-    // E11000 = duplicate key — partial success is fine, re-throw anything else
-    if (err.code !== 11000 && err.writeErrors?.some((e) => e.code !== 11000)) {
-      throw err;
-    }
-    return err;
+  const service = await Service.create({
+    name: name.trim(),
+    category: category.trim(),
+    duration: duration.trim(),
+    price,
   });
-
-  const inserted = result.insertedCount ?? result.mongoose?.insertedCount ?? 0;
 
   return res
     .status(201)
-    .json(new ApiResponse(201, `${inserted} service(s) added successfully`));
+    .json(new ApiResponse(201, "Service added successfully", service));
 });
 
 const getServices = asyncHandler(async (req, res) => {
-  const services = await Service.find({ isActive: true })
-    .select("_id name")
-    .sort({ name: 1 });
+  const services = await Service.aggregate([
+    { $match: { isActive: true } },
+    {
+      $group: {
+        _id: "$category",
+        subServices: {
+          $push: {
+            _id: "$_id",
+            name: "$name",
+            duration: "$duration",
+            price: "$price",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        category: "$_id",
+        subServices: 1,
+      },
+    },
+    { $sort: { category: 1 } },
+  ]);
 
   return res
     .status(200)

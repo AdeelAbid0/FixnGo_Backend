@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
 import serviceRouter from "./routes/service.routes.js";
+import partnerRouter from "./routes/partner.routes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(cookieParser()); // to get access to cookies of user in browser to perfo
 // routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/services", serviceRouter);
+app.use("/api/v1/partners", partnerRouter);
 
 // global error handler
 app.use((err, req, res, next) => {

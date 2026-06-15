@@ -19,7 +19,11 @@ const partnerSchema = new mongoose.Schema(
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
     description: { type: String, trim: true },
     serviceImages: [{ type: String }],
-    isApproved: { type: Boolean, default: false },
+    status: {
+      type: String,
+      enum: ["pending", "active", "rejected", "inactive"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );
