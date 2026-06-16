@@ -6,11 +6,14 @@ const serviceSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: true,
     },
-    duration: { type: String, required: true, trim: true },
-    price: { type: Number, required: true },
+    duration: { type: String, trim: true },
+    price: { type: Number },
     isActive: { type: Boolean, default: true },
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true }
 );

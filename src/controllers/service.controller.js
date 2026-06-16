@@ -4,92 +4,106 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-const addServices = asyncHandler(async (req, res) => {
-  const { name, categoryId, duration, price } = req.body ?? {};
+const addService = asyncHandler(async (req, res) => {
+  const { service, categoryId } = req.body ?? {};
 
-  if (!name?.trim() || !categoryId || !duration?.trim() || price === undefined || price === null) {
-    throw new ApiError(400, "name, categoryId, duration, and price are required");
-  }
-
-  if (typeof price !== "number" || price < 0) {
-    throw new ApiError(400, "price must be a non-negative number");
+  if (!service?.trim() || !categoryId) {
+    throw new ApiError(400, "service and categoryId are required");
   }
 
   const category = await Category.findById(categoryId);
   if (!category) throw new ApiError(404, "Category not found");
 
-  const service = await Service.create({
-    name: name.trim(),
+  const existing = await Service.findOne({ name: service.trim() });
+  if (existing)
+    throw new ApiError(409, "Service with this name already exists");
+
+  const newService = await Service.create({
+    name: service.trim(),
     category: categoryId,
-    duration: duration.trim(),
-    price,
+    addedBy: req.user._id,
   });
 
-  await service.populate("category", "name");
+  await newService.populate([
+    { path: "category", select: "_id name" },
+    { path: "addedBy", select: "_id name email role" },
+  ]);
 
   return res
     .status(201)
-    .json(new ApiResponse(201, "Service added successfully", service));
-});
-
-const getServicesByCategory = asyncHandler(async (req, res) => {
-  const { categoryId } = req.params;
-
-  const category = await Category.findById(categoryId);
-  if (!category) throw new ApiError(404, "Category not found");
-
-  const services = await Service.find({ category: categoryId, isActive: true })
-    .select("_id name duration price")
-    .sort({ name: 1 });
-
-  return res.status(200).json(
-    new ApiResponse(200, "Services fetched successfully", {
-      category: { _id: category._id, name: category.name },
-      services,
-    })
-  );
+    .json(new ApiResponse(201, "Service added successfully", newService));
 });
 
 const getServices = asyncHandler(async (req, res) => {
-  const services = await Service.aggregate([
-    { $match: { isActive: true } },
-    {
-      $lookup: {
-        from: "categories",
-        localField: "category",
-        foreignField: "_id",
-        as: "categoryInfo",
-      },
-    },
-    { $unwind: "$categoryInfo" },
-    {
-      $group: {
-        _id: "$categoryInfo._id",
-        category: { $first: "$categoryInfo.name" },
-        subServices: {
-          $push: {
-            _id: "$_id",
-            name: "$name",
-            duration: "$duration",
-            price: "$price",
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        categoryId: "$_id",
-        category: 1,
-        subServices: 1,
-      },
-    },
-    { $sort: { category: 1 } },
-  ]);
+  const services = await Service.find({ isActive: true })
+    .select("_id name category addedBy")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role")
+    .sort({ name: 1 });
 
   return res
     .status(200)
     .json(new ApiResponse(200, "Services fetched successfully", services));
 });
 
-export { addServices, getServicesByCategory, getServices };
+const updateService = asyncHandler(async (req, res) => {
+  const { serviceId, service, categoryId } = req.body ?? {};
+
+  if (!serviceId) {
+    throw new ApiError(400, "serviceId is required");
+  }
+
+  if (!service?.trim() && !categoryId) {
+    throw new ApiError(
+      400,
+      "At least service or categoryId is required to update"
+    );
+  }
+
+  const existing = await Service.findById(serviceId);
+  if (!existing) throw new ApiError(404, "Service not found");
+
+  if (service?.trim()) {
+    const duplicate = await Service.findOne({
+      name: service.trim(),
+      _id: { $ne: serviceId },
+    });
+    if (duplicate)
+      throw new ApiError(409, "Service with this name already exists");
+    existing.name = service.trim();
+  }
+
+  if (categoryId) {
+    const category = await Category.findById(categoryId);
+    if (!category) throw new ApiError(404, "Category not found");
+    existing.category = categoryId;
+  }
+
+  await existing.save();
+
+  await existing.populate([
+    { path: "category", select: "_id name" },
+    { path: "addedBy", select: "_id name email role" },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Service updated successfully", existing));
+});
+
+const deleteService = asyncHandler(async (req, res) => {
+  const { serviceId } = req.body ?? {};
+
+  if (!serviceId) throw new ApiError(400, "serviceId is required");
+
+  const service = await Service.findById(serviceId);
+  if (!service) throw new ApiError(404, "Service not found");
+
+  await Service.findByIdAndDelete(serviceId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Service deleted successfully", null));
+});
+
+export { addService, updateService, deleteService, getServices };
