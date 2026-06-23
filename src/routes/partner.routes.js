@@ -4,6 +4,8 @@ import {
   updatePartnerStatus,
   getActivePartners,
   addPartner,
+  removePartner,
+  getRemovedPartners,
 } from "../controllers/partner.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -21,5 +23,12 @@ router.post(
   upload.array("serviceImages"),
   addPartner
 );
+router.post(
+  "/removePartner",
+  verifyToken,
+  requireRole("superadmin"),
+  removePartner
+);
+router.get("/getRemovedPartners", verifyToken, getRemovedPartners);
 
 export default router;

@@ -1,13 +1,15 @@
 import { Partner } from "../models/partner.model.js";
 import { User } from "../models/user.model.js";
 import { Service } from "../models/service.model.js";
+import { RemovedPartner } from "../models/removedPartner.model.js";
+import { RejectionReason } from "../models/rejectionReason.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllPartners = asyncHandler(async (req, res) => {
-  const partners = await Partner.find()
+  const partners = await Partner.find({ status: { $ne: "rejected" } })
     .populate("user", "-password -refreshToken")
     .populate("services", "name category")
     .sort({ createdAt: -1 });
@@ -172,4 +174,77 @@ const addPartner = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, "Partner added successfully", responseData));
 });
 
-export { getAllPartners, updatePartnerStatus, getActivePartners, addPartner };
+const removePartner = asyncHandler(async (req, res) => {
+  const { partnerId, reasonId } = req.body;
+
+  if (!partnerId || !reasonId) {
+    throw new ApiError(400, "partnerId and reasonId are required");
+  }
+
+  const partner = await Partner.findById(partnerId);
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  if (partner.status === "rejected") {
+    throw new ApiError(400, "Partner is already removed");
+  }
+
+  const reason = await RejectionReason.findById(reasonId);
+  if (!reason) throw new ApiError(404, "Rejection reason not found");
+
+  await Partner.findByIdAndUpdate(partnerId, { status: "rejected" });
+
+  const removed = await RemovedPartner.create({
+    partner: partnerId,
+    reason: reasonId,
+  });
+
+  const result = await RemovedPartner.findById(removed._id)
+    .populate({
+      path: "partner",
+      populate: [
+        { path: "user", select: "-password -refreshToken" },
+        { path: "services", select: "name category" },
+      ],
+    })
+    .populate("reason");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Partner removed successfully", result));
+});
+
+const getRemovedPartners = asyncHandler(async (req, res) => {
+  const removedPartners = await RemovedPartner.find()
+    .populate({
+      path: "partner",
+      populate: [
+        { path: "user", select: "-password -refreshToken" },
+        {
+          path: "services",
+          select: "name category",
+          populate: { path: "category", select: "name" },
+        },
+      ],
+    })
+    .populate("reason")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Removed partners fetched successfully",
+        removedPartners
+      )
+    );
+});
+
+export {
+  getAllPartners,
+  updatePartnerStatus,
+  getActivePartners,
+  addPartner,
+  removePartner,
+  getRemovedPartners,
+};
