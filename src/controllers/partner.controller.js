@@ -175,10 +175,10 @@ const addPartner = asyncHandler(async (req, res) => {
 });
 
 const removePartner = asyncHandler(async (req, res) => {
-  const { partnerId, reasonId, detail } = req.body;
+  const { partnerId, reasonIds, detail } = req.body;
 
-  if (!partnerId || !reasonId) {
-    throw new ApiError(400, "partnerId and reasonId are required");
+  if (!partnerId || !Array.isArray(reasonIds) || reasonIds.length === 0) {
+    throw new ApiError(400, "partnerId and reasonIds (array) are required");
   }
 
   const partner = await Partner.findById(partnerId);
@@ -188,12 +188,14 @@ const removePartner = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Partner is already removed");
   }
 
-  const reason = await RejectionReason.findById(reasonId);
-  if (!reason) throw new ApiError(404, "Rejection reason not found");
+  const reasons = await RejectionReason.find({ _id: { $in: reasonIds } });
+  if (reasons.length !== reasonIds.length) {
+    throw new ApiError(404, "One or more rejection reasons not found");
+  }
 
   await Partner.findByIdAndUpdate(partnerId, { status: "rejected" });
 
-  const removedData = { partner: partnerId, reason: reasonId };
+  const removedData = { partner: partnerId, reasons: reasonIds };
   if (detail) removedData.detail = detail.trim();
 
   const removed = await RemovedPartner.create(removedData);
@@ -206,7 +208,7 @@ const removePartner = asyncHandler(async (req, res) => {
         { path: "services", select: "name category" },
       ],
     })
-    .populate("reason");
+    .populate("reasons");
 
   return res
     .status(200)
@@ -226,7 +228,7 @@ const getRemovedPartners = asyncHandler(async (req, res) => {
         },
       ],
     })
-    .populate("reason")
+    .populate("reasons")
     .sort({ createdAt: -1 });
 
   return res

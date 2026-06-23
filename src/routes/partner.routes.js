@@ -23,7 +23,7 @@ router.post(
   upload.array("serviceImages"),
   addPartner
 );
-router.post(
+router.delete(
   "/removePartner",
   verifyToken,
   requireRole("superadmin"),

@@ -8,8 +8,8 @@ const removedPartnerSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    reason: {
-      type: mongoose.Schema.Types.ObjectId,
+    reasons: {
+      type: [mongoose.Schema.Types.ObjectId],
       ref: "RejectionReason",
       required: true,
     },
