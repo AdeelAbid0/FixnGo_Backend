@@ -13,6 +13,10 @@ const removedPartnerSchema = new mongoose.Schema(
       ref: "RejectionReason",
       required: true,
     },
+    detail: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

@@ -175,7 +175,7 @@ const addPartner = asyncHandler(async (req, res) => {
 });
 
 const removePartner = asyncHandler(async (req, res) => {
-  const { partnerId, reasonId } = req.body;
+  const { partnerId, reasonId, detail } = req.body;
 
   if (!partnerId || !reasonId) {
     throw new ApiError(400, "partnerId and reasonId are required");
@@ -193,10 +193,10 @@ const removePartner = asyncHandler(async (req, res) => {
 
   await Partner.findByIdAndUpdate(partnerId, { status: "rejected" });
 
-  const removed = await RemovedPartner.create({
-    partner: partnerId,
-    reason: reasonId,
-  });
+  const removedData = { partner: partnerId, reason: reasonId };
+  if (detail) removedData.detail = detail.trim();
+
+  const removed = await RemovedPartner.create(removedData);
 
   const result = await RemovedPartner.findById(removed._id)
     .populate({
