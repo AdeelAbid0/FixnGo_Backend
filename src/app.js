@@ -13,11 +13,7 @@ const app = express();
 // app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true })); // to allow cross-origin requests from the frontend and allow cookies to be sent with requests
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      // "https://your-frontend-domain.vercel.app",
-      // "https://yourdomain.com",
-    ],
+    origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
