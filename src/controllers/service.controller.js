@@ -35,7 +35,12 @@ const addService = asyncHandler(async (req, res) => {
 });
 
 const getServices = asyncHandler(async (req, res) => {
-  const services = await Service.find({ isActive: true })
+  const { categoryId } = req.query;
+
+  const filter = { isActive: true };
+  if (categoryId) filter.category = categoryId;
+
+  const services = await Service.find(filter)
     .select("_id name category addedBy")
     .populate("category", "_id name")
     .populate("addedBy", "_id name role")

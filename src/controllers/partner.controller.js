@@ -1,6 +1,8 @@
 import { Partner } from "../models/partner.model.js";
 import { User } from "../models/user.model.js";
 import { Service } from "../models/service.model.js";
+import { Category } from "../models/category.model.js";
+import { PartnerService } from "../models/partnerService.model.js";
 import { RemovedPartner } from "../models/removedPartner.model.js";
 import { RejectionReason } from "../models/rejectionReason.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -11,12 +13,31 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 const getAllPartners = asyncHandler(async (req, res) => {
   const partners = await Partner.find({ status: { $ne: "rejected" } })
     .populate("user", "-password -refreshToken")
-    .populate("services", "name category")
     .sort({ createdAt: -1 });
+
+  const partnerIds = partners.map((p) => p._id);
+  const partnerServices = await PartnerService.find({
+    partner: { $in: partnerIds },
+  })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role");
+
+  const serviceMap = {};
+  partnerServices.forEach((ps) => {
+    const pid = ps.partner.toString();
+    if (!serviceMap[pid]) serviceMap[pid] = [];
+    serviceMap[pid].push(ps);
+  });
+
+  const result = partners.map((p) => ({
+    ...p.toObject(),
+    services: serviceMap[p._id.toString()] || [],
+  }));
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Partners fetched successfully", partners));
+    .json(new ApiResponse(200, "Partners fetched successfully", result));
 });
 
 const updatePartnerStatus = asyncHandler(async (req, res) => {
@@ -56,17 +77,32 @@ const updatePartnerStatus = asyncHandler(async (req, res) => {
 const getActivePartners = asyncHandler(async (req, res) => {
   const partners = await Partner.find({ status: "active" })
     .populate("user", "-password -refreshToken")
-    .populate({
-      path: "services",
-      select: "name category",
-      populate: { path: "category", select: "name" },
-    })
     .sort({ createdAt: -1 });
+
+  const partnerIds = partners.map((p) => p._id);
+  const partnerServices = await PartnerService.find({
+    partner: { $in: partnerIds },
+  })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role");
+
+  const serviceMap = {};
+  partnerServices.forEach((ps) => {
+    const pid = ps.partner.toString();
+    if (!serviceMap[pid]) serviceMap[pid] = [];
+    serviceMap[pid].push(ps);
+  });
+
+  const result = partners.map((p) => ({
+    ...p.toObject(),
+    services: serviceMap[p._id.toString()] || [],
+  }));
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "Active partners fetched successfully", partners)
+      new ApiResponse(200, "Active partners fetched successfully", result)
     );
 });
 
@@ -242,6 +278,125 @@ const getRemovedPartners = asyncHandler(async (req, res) => {
     );
 });
 
+const addPartnerService = asyncHandler(async (req, res) => {
+  const { partnerId, serviceId, categoryId, price, duration, status } =
+    req.body ?? {};
+
+  if (!partnerId || !serviceId || !categoryId || price == null || !duration?.trim()) {
+    throw new ApiError(
+      400,
+      "partnerId, serviceId, categoryId, price and duration are required"
+    );
+  }
+
+  const partner = await Partner.findOne({ user: partnerId });
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const [service, category] = await Promise.all([
+    Service.findById(serviceId),
+    Category.findById(categoryId),
+  ]);
+  if (!service) throw new ApiError(404, "Service not found");
+  if (!category) throw new ApiError(404, "Category not found");
+
+  const duplicate = await PartnerService.findOne({
+    partner: partner._id,
+    service: serviceId,
+  });
+  if (duplicate) throw new ApiError(409, "This service is already added for this partner");
+
+  const partnerService = await PartnerService.create({
+    partner: partner._id,
+    service: serviceId,
+    category: categoryId,
+    price,
+    duration: duration.trim(),
+    status: status || "active",
+    addedBy: req.user._id,
+  });
+
+  await partnerService.populate([
+    { path: "partner", select: "_id businessName" },
+    { path: "service", select: "_id name" },
+    { path: "category", select: "_id name" },
+    { path: "addedBy", select: "_id name role" },
+  ]);
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, "Partner service added successfully", partnerService)
+    );
+});
+
+const updatePartnerService = asyncHandler(async (req, res) => {
+  const { partnerServiceId, serviceId, categoryId, price, duration, status } =
+    req.body ?? {};
+
+  if (!partnerServiceId) throw new ApiError(400, "partnerServiceId is required");
+
+  const partnerService = await PartnerService.findById(partnerServiceId);
+  if (!partnerService) throw new ApiError(404, "Partner service not found");
+
+  if (serviceId) {
+    const service = await Service.findById(serviceId);
+    if (!service) throw new ApiError(404, "Service not found");
+    const duplicate = await PartnerService.findOne({
+      partner: partnerService.partner,
+      service: serviceId,
+      _id: { $ne: partnerServiceId },
+    });
+    if (duplicate) throw new ApiError(409, "This service is already added for this partner");
+    partnerService.service = serviceId;
+  }
+
+  if (categoryId) {
+    const category = await Category.findById(categoryId);
+    if (!category) throw new ApiError(404, "Category not found");
+    partnerService.category = categoryId;
+  }
+
+  if (price != null) partnerService.price = price;
+  if (duration?.trim()) partnerService.duration = duration.trim();
+  if (status) partnerService.status = status;
+
+  await partnerService.save();
+
+  await partnerService.populate([
+    { path: "partner", select: "_id businessName" },
+    { path: "service", select: "_id name" },
+    { path: "category", select: "_id name" },
+    { path: "addedBy", select: "_id name role" },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Partner service updated successfully", partnerService)
+    );
+});
+
+const getPartnerServices = asyncHandler(async (req, res) => {
+  const { partnerId } = req.query;
+
+  if (!partnerId) throw new ApiError(400, "partnerId is required");
+
+  const partner = await Partner.findOne({ user: partnerId });
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const services = await PartnerService.find({ partner: partner._id })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Partner services fetched successfully", services)
+    );
+});
+
 export {
   getAllPartners,
   updatePartnerStatus,
@@ -249,4 +404,7 @@ export {
   addPartner,
   removePartner,
   getRemovedPartners,
+  addPartnerService,
+  updatePartnerService,
+  getPartnerServices,
 };

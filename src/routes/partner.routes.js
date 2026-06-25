@@ -6,6 +6,9 @@ import {
   addPartner,
   removePartner,
   getRemovedPartners,
+  addPartnerService,
+  updatePartnerService,
+  getPartnerServices,
 } from "../controllers/partner.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -30,5 +33,9 @@ router.delete(
   removePartner
 );
 router.get("/getRemovedPartners", verifyToken, getRemovedPartners);
+
+router.post("/addPartnerService", verifyToken, addPartnerService);
+router.patch("/updatePartnerService", verifyToken, updatePartnerService);
+router.get("/getPartnerServices", getPartnerServices);
 
 export default router;
