@@ -9,11 +9,19 @@ import rejectionReasonRouter from "./routes/rejectionReason.routes.js";
 
 const app = express();
 
-// coniguration for express app
-// app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true })); // to allow cross-origin requests from the frontend and allow cookies to be sent with requests
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : [];
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
