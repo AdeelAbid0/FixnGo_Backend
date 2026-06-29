@@ -376,6 +376,21 @@ const updatePartnerService = asyncHandler(async (req, res) => {
     );
 });
 
+const getAllPartnerServices = asyncHandler(async (req, res) => {
+  const services = await PartnerService.find({ status: "active" })
+    .populate({ path: "partner", select: "_id businessName" })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "All partner services fetched successfully", services)
+    );
+});
+
 const getPartnerServices = asyncHandler(async (req, res) => {
   const { partnerId } = req.query;
 
@@ -407,4 +422,5 @@ export {
   addPartnerService,
   updatePartnerService,
   getPartnerServices,
+  getAllPartnerServices,
 };
