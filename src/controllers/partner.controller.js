@@ -101,9 +101,7 @@ const getActivePartners = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, "Active partners fetched successfully", result)
-    );
+    .json(new ApiResponse(200, "Active partners fetched successfully", result));
 });
 
 const addPartner = asyncHandler(async (req, res) => {
@@ -282,7 +280,13 @@ const addPartnerService = asyncHandler(async (req, res) => {
   const { partnerId, serviceId, categoryId, price, duration, status } =
     req.body ?? {};
 
-  if (!partnerId || !serviceId || !categoryId || price == null || !duration?.trim()) {
+  if (
+    !partnerId ||
+    !serviceId ||
+    !categoryId ||
+    price == null ||
+    !duration?.trim()
+  ) {
     throw new ApiError(
       400,
       "partnerId, serviceId, categoryId, price and duration are required"
@@ -303,7 +307,8 @@ const addPartnerService = asyncHandler(async (req, res) => {
     partner: partner._id,
     service: serviceId,
   });
-  if (duplicate) throw new ApiError(409, "This service is already added for this partner");
+  if (duplicate)
+    throw new ApiError(409, "This service is already added for this partner");
 
   const partnerService = await PartnerService.create({
     partner: partner._id,
@@ -333,7 +338,8 @@ const updatePartnerService = asyncHandler(async (req, res) => {
   const { partnerServiceId, serviceId, categoryId, price, duration, status } =
     req.body ?? {};
 
-  if (!partnerServiceId) throw new ApiError(400, "partnerServiceId is required");
+  if (!partnerServiceId)
+    throw new ApiError(400, "partnerServiceId is required");
 
   const partnerService = await PartnerService.findById(partnerServiceId);
   if (!partnerService) throw new ApiError(404, "Partner service not found");
@@ -346,7 +352,8 @@ const updatePartnerService = asyncHandler(async (req, res) => {
       service: serviceId,
       _id: { $ne: partnerServiceId },
     });
-    if (duplicate) throw new ApiError(409, "This service is already added for this partner");
+    if (duplicate)
+      throw new ApiError(409, "This service is already added for this partner");
     partnerService.service = serviceId;
   }
 
@@ -372,7 +379,62 @@ const updatePartnerService = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "Partner service updated successfully", partnerService)
+      new ApiResponse(
+        200,
+        "Partner service updated successfully",
+        partnerService
+      )
+    );
+});
+
+const getPartnersByService = asyncHandler(async (req, res) => {
+  const { serviceId } = req.query;
+
+  if (!serviceId) throw new ApiError(400, "serviceId is required");
+
+  const service = await Service.findById(serviceId);
+  if (!service) throw new ApiError(404, "Service not found");
+
+  const partnerServices = await PartnerService.find({
+    service: serviceId,
+    status: "active",
+  }).populate({
+    path: "partner",
+    populate: { path: "user", select: "-password -refreshToken" },
+  });
+
+  const partnerIds = partnerServices.map((ps) => ps.partner._id);
+
+  const allServices = await PartnerService.find({
+    partner: { $in: partnerIds },
+    status: "active",
+  })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role");
+
+  const serviceMap = {};
+  allServices.forEach((ps) => {
+    const pid = ps.partner.toString();
+    if (!serviceMap[pid]) serviceMap[pid] = [];
+    serviceMap[pid].push(ps);
+  });
+
+  const partners = partnerServices.map((ps) => ({
+    ...ps.partner.toObject(),
+    price: ps.price,
+    duration: ps.duration,
+    services: serviceMap[ps.partner._id.toString()] || [],
+  }));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Partners fetched successfully for this service",
+        partners
+      )
     );
 });
 
@@ -387,7 +449,11 @@ const getAllPartnerServices = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "All partner services fetched successfully", services)
+      new ApiResponse(
+        200,
+        "All partner services fetched successfully",
+        services
+      )
     );
 });
 
@@ -423,4 +489,5 @@ export {
   updatePartnerService,
   getPartnerServices,
   getAllPartnerServices,
+  getPartnersByService,
 };

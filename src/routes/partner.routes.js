@@ -10,6 +10,7 @@ import {
   updatePartnerService,
   getPartnerServices,
   getAllPartnerServices,
+  getPartnersByService,
 } from "../controllers/partner.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -39,5 +40,6 @@ router.post("/addPartnerService", verifyToken, addPartnerService);
 router.patch("/updatePartnerService", verifyToken, updatePartnerService);
 router.get("/getPartnerServices", getPartnerServices);
 router.get("/getAllPartnerServices", getAllPartnerServices);
+router.get("/getPartnersByService", getPartnersByService);
 
 export default router;
