@@ -487,12 +487,13 @@ const getAllPartnerServices = asyncHandler(async (req, res) => {
 const getServicesByFilter = asyncHandler(async (req, res) => {
   const { categoryId, carType, fuelType } = req.query;
 
-  if (!categoryId) throw new ApiError(400, "categoryId is required");
+  const filter = { status: "active" };
 
-  const category = await Category.findById(categoryId);
-  if (!category) throw new ApiError(404, "Category not found");
-
-  const filter = { category: categoryId, status: "active" };
+  if (categoryId) {
+    const category = await Category.findById(categoryId);
+    if (!category) throw new ApiError(404, "Category not found");
+    filter.category = categoryId;
+  }
 
   if (carType && carType !== "all") {
     filter.carType = { $in: [carType, "all"] };
