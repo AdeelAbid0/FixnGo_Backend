@@ -277,8 +277,17 @@ const getRemovedPartners = asyncHandler(async (req, res) => {
 });
 
 const addPartnerService = asyncHandler(async (req, res) => {
-  const { partnerId, serviceId, categoryId, price, duration, status } =
-    req.body ?? {};
+  const {
+    partnerId,
+    serviceId,
+    categoryId,
+    price,
+    duration,
+    status,
+    carType,
+    fuelType,
+    description,
+  } = req.body ?? {};
 
   if (
     !partnerId ||
@@ -317,6 +326,9 @@ const addPartnerService = asyncHandler(async (req, res) => {
     price,
     duration: duration.trim(),
     status: status || "active",
+    carType,
+    fuelType,
+    description: description?.trim() || "",
     addedBy: req.user._id,
   });
 
@@ -335,8 +347,17 @@ const addPartnerService = asyncHandler(async (req, res) => {
 });
 
 const updatePartnerService = asyncHandler(async (req, res) => {
-  const { partnerServiceId, serviceId, categoryId, price, duration, status } =
-    req.body ?? {};
+  const {
+    partnerServiceId,
+    serviceId,
+    categoryId,
+    price,
+    duration,
+    status,
+    carType,
+    fuelType,
+    description,
+  } = req.body ?? {};
 
   if (!partnerServiceId)
     throw new ApiError(400, "partnerServiceId is required");
@@ -366,6 +387,9 @@ const updatePartnerService = asyncHandler(async (req, res) => {
   if (price != null) partnerService.price = price;
   if (duration?.trim()) partnerService.duration = duration.trim();
   if (status) partnerService.status = status;
+  if (carType) partnerService.carType = carType;
+  if (fuelType) partnerService.fuelType = fuelType;
+  if (description != null) partnerService.description = description.trim();
 
   await partnerService.save();
 
@@ -424,6 +448,9 @@ const getPartnersByService = asyncHandler(async (req, res) => {
     ...ps.partner.toObject(),
     price: ps.price,
     duration: ps.duration,
+    carType: ps.carType,
+    fuelType: ps.fuelType,
+    description: ps.description,
     services: serviceMap[ps.partner._id.toString()] || [],
   }));
 
@@ -455,6 +482,36 @@ const getAllPartnerServices = asyncHandler(async (req, res) => {
         services
       )
     );
+});
+
+const getServicesByFilter = asyncHandler(async (req, res) => {
+  const { categoryId, carType, fuelType } = req.query;
+
+  if (!categoryId) throw new ApiError(400, "categoryId is required");
+
+  const category = await Category.findById(categoryId);
+  if (!category) throw new ApiError(404, "Category not found");
+
+  const filter = { category: categoryId, status: "active" };
+
+  if (carType && carType !== "all") {
+    filter.carType = { $in: [carType, "all"] };
+  }
+
+  if (fuelType) {
+    filter.fuelType = fuelType;
+  }
+
+  const services = await PartnerService.find(filter)
+    .populate({ path: "partner", select: "_id businessName" })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Services fetched successfully", services));
 });
 
 const getPartnerServices = asyncHandler(async (req, res) => {
@@ -490,4 +547,5 @@ export {
   getPartnerServices,
   getAllPartnerServices,
   getPartnersByService,
+  getServicesByFilter,
 };

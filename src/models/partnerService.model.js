@@ -20,6 +20,28 @@ const partnerServiceSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     duration: { type: String, required: true, trim: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    carType: {
+      type: String,
+      enum: [
+        "all",
+        "sedan",
+        "suv",
+        "hatchback",
+        "crossover",
+        "crossover_suv",
+        "coupe",
+        "pickup",
+        "van",
+        "highroof",
+      ],
+      trim: true,
+    },
+    fuelType: {
+      type: String,
+      enum: ["petrol", "diesel", "hybrid", "electric", "cng_lpg"],
+      trim: true,
+    },
+    description: { type: String, trim: true, default: "" },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
