@@ -1,6 +1,5 @@
 import { User } from "../models/user.model.js";
 import { Partner } from "../models/partner.model.js";
-import { Service } from "../models/service.model.js";
 import { PendingRegistration } from "../models/pendingRegistration.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -73,7 +72,6 @@ const registerPartner = asyncHandler(async (req, res) => {
     businessName,
     longitude,
     latitude,
-    services,
     description,
   } = req.body ?? {};
 
@@ -87,30 +85,6 @@ const registerPartner = asyncHandler(async (req, res) => {
       400,
       "fullName, email, password, phone, businessName, longitude and latitude are required"
     );
-  }
-
-  // services arrives as JSON string from multipart form e.g. '["id1","id2"]'
-  let parsedServices = services;
-  if (typeof services === "string") {
-    try {
-      parsedServices = JSON.parse(services);
-    } catch {
-      parsedServices = [services];
-    }
-  }
-
-  if (!Array.isArray(parsedServices) || parsedServices.length === 0) {
-    throw new ApiError(
-      400,
-      "services must be a non-empty array of service IDs"
-    );
-  }
-
-  const validServices = await Service.find({
-    _id: { $in: parsedServices },
-  }).select("_id");
-  if (validServices.length !== parsedServices.length) {
-    throw new ApiError(400, "One or more service IDs are invalid");
   }
 
   const parsedLng = parseFloat(longitude);
@@ -157,7 +131,6 @@ const registerPartner = asyncHandler(async (req, res) => {
         businessName,
         longitude: parsedLng,
         latitude: parsedLat,
-        services: parsedServices,
         description: description?.trim() || "",
         serviceImages,
       },
@@ -230,13 +203,13 @@ const verifyOtp = asyncHandler(async (req, res) => {
         type: "Point",
         coordinates: [data.longitude, data.latitude],
       },
-      services: data.services,
       serviceImages: data.serviceImages,
     });
 
-    responseData = await Partner.findById(partner._id)
-      .populate("user", "-password -refreshToken")
-      .populate("services", "name");
+    responseData = await Partner.findById(partner._id).populate(
+      "user",
+      "-password -refreshToken"
+    );
   }
 
   await PendingRegistration.deleteOne({ email: normalizedEmail });

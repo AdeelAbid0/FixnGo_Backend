@@ -112,7 +112,6 @@ const addPartner = asyncHandler(async (req, res) => {
     businessName,
     longitude,
     latitude,
-    services,
     description,
   } = req.body ?? {};
 
@@ -126,29 +125,6 @@ const addPartner = asyncHandler(async (req, res) => {
       400,
       "fullName, email, phone, businessName, longitude and latitude are required"
     );
-  }
-
-  let parsedServices = services;
-  if (typeof services === "string") {
-    try {
-      parsedServices = JSON.parse(services);
-    } catch {
-      parsedServices = [services];
-    }
-  }
-
-  if (!Array.isArray(parsedServices) || parsedServices.length === 0) {
-    throw new ApiError(
-      400,
-      "services must be a non-empty array of service IDs"
-    );
-  }
-
-  const validServices = await Service.find({
-    _id: { $in: parsedServices },
-  }).select("_id");
-  if (validServices.length !== parsedServices.length) {
-    throw new ApiError(400, "One or more service IDs are invalid");
   }
 
   const parsedLng = parseFloat(longitude);
@@ -190,18 +166,14 @@ const addPartner = asyncHandler(async (req, res) => {
     businessName: businessName.trim(),
     description: description?.trim() || "",
     location: { type: "Point", coordinates: [parsedLng, parsedLat] },
-    services: parsedServices,
     serviceImages,
     status: "active",
   });
 
-  const responseData = await Partner.findById(partner._id)
-    .populate("user", "-password -refreshToken")
-    .populate({
-      path: "services",
-      select: "name category",
-      populate: { path: "category", select: "name" },
-    });
+  const responseData = await Partner.findById(partner._id).populate(
+    "user",
+    "-password -refreshToken"
+  );
 
   return res
     .status(201)

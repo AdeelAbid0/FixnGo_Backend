@@ -73,8 +73,8 @@ const createBooking = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, "Booking created successfully", booking));
 });
 
-const getAllBookings = asyncHandler(async (req, res) => {
-  const bookings = await Booking.find()
+const fetchBookingsWithDetails = async (filter) => {
+  const bookings = await Booking.find(filter)
     .populate("user", "_id name email")
     .populate("partner", "_id businessName location")
     .populate("services", "_id name")
@@ -90,7 +90,7 @@ const getAllBookings = asyncHandler(async (req, res) => {
     psMap[`${ps.partner}_${ps.service}`] = ps;
   });
 
-  const result = bookings.map((b) => {
+  return bookings.map((b) => {
     const booking = b.toObject();
     booking.services = booking.services.map((s) => {
       const ps = psMap[`${booking.partner?._id}_${s._id}`];
@@ -104,10 +104,53 @@ const getAllBookings = asyncHandler(async (req, res) => {
     });
     return booking;
   });
+};
+
+const getAllBookings = asyncHandler(async (req, res) => {
+  const result = await fetchBookingsWithDetails({});
 
   return res
     .status(200)
     .json(new ApiResponse(200, "All bookings fetched successfully", result));
+});
+
+const getBookingsByCustomerId = asyncHandler(async (req, res) => {
+  const { customerId } = req.query;
+
+  if (!customerId) throw new ApiError(400, "customerId is required");
+  if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    throw new ApiError(400, "Invalid customerId");
+  }
+
+  const result = await fetchBookingsWithDetails({ user: customerId });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Customer bookings fetched successfully", result)
+    );
+});
+
+const getBookingsByPartnerId = asyncHandler(async (req, res) => {
+  const { partnerId } = req.query;
+
+  if (!partnerId) throw new ApiError(400, "partnerId is required");
+  if (!mongoose.Types.ObjectId.isValid(partnerId)) {
+    throw new ApiError(400, "Invalid partnerId");
+  }
+
+  // partnerId can be the Partner _id or the partner's user _id
+  let partner = await Partner.findById(partnerId);
+  if (!partner) partner = await Partner.findOne({ user: partnerId });
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const result = await fetchBookingsWithDetails({ partner: partner._id });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Partner bookings fetched successfully", result)
+    );
 });
 
 const cancelBooking = asyncHandler(async (req, res) => {
@@ -195,4 +238,11 @@ const acceptBooking = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Booking accepted successfully", booking));
 });
 
-export { createBooking, getAllBookings, cancelBooking, acceptBooking };
+export {
+  createBooking,
+  getAllBookings,
+  getBookingsByCustomerId,
+  getBookingsByPartnerId,
+  cancelBooking,
+  acceptBooking,
+};
