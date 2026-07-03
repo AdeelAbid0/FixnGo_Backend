@@ -515,6 +515,70 @@ const getServicesByFilter = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Services fetched successfully", services));
 });
 
+const getPartnersByFilter = asyncHandler(async (req, res) => {
+  const { serviceId, carType, fuelType } = req.query;
+
+  if (!serviceId) throw new ApiError(400, "serviceId is required");
+
+  const service = await Service.findById(serviceId);
+  if (!service) throw new ApiError(404, "Service not found");
+
+  const typeFilter = {};
+  if (carType && carType !== "all") {
+    typeFilter.carType = { $in: [carType, "all"] };
+  }
+  if (fuelType) {
+    typeFilter.fuelType = fuelType;
+  }
+
+  const partnerServices = await PartnerService.find({
+    service: serviceId,
+    status: "active",
+    ...typeFilter,
+  }).populate({
+    path: "partner",
+    populate: { path: "user", select: "-password -refreshToken" },
+  });
+
+  const partnerIds = partnerServices.map((ps) => ps.partner._id);
+
+  const matchedServices = await PartnerService.find({
+    partner: { $in: partnerIds },
+    status: "active",
+    ...typeFilter,
+  })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role");
+
+  const serviceMap = {};
+  matchedServices.forEach((ps) => {
+    const pid = ps.partner.toString();
+    if (!serviceMap[pid]) serviceMap[pid] = [];
+    serviceMap[pid].push(ps);
+  });
+
+  const partners = partnerServices.map((ps) => ({
+    ...ps.partner.toObject(),
+    price: ps.price,
+    duration: ps.duration,
+    carType: ps.carType,
+    fuelType: ps.fuelType,
+    description: ps.description,
+    services: serviceMap[ps.partner._id.toString()] || [],
+  }));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Partners fetched successfully for this service filter",
+        partners
+      )
+    );
+});
+
 const getPartnerServices = asyncHandler(async (req, res) => {
   const { partnerId } = req.query;
 
@@ -549,4 +613,5 @@ export {
   getAllPartnerServices,
   getPartnersByService,
   getServicesByFilter,
+  getPartnersByFilter,
 };

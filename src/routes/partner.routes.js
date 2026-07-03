@@ -12,6 +12,7 @@ import {
   getAllPartnerServices,
   getPartnersByService,
   getServicesByFilter,
+  getPartnersByFilter,
 } from "../controllers/partner.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -43,5 +44,6 @@ router.get("/getPartnerServices", getPartnerServices);
 router.get("/getAllPartnerServices", getAllPartnerServices);
 router.get("/getPartnersByService", getPartnersByService);
 router.get("/getServicesByFilter", getServicesByFilter);
+router.get("/getPartnersByFilter", getPartnersByFilter);
 
 export default router;
