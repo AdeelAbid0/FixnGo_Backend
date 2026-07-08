@@ -476,7 +476,10 @@ const getServicesByFilter = asyncHandler(async (req, res) => {
   }
 
   const services = await PartnerService.find(filter)
-    .populate({ path: "partner", select: "_id businessName" })
+    .populate({
+      path: "partner",
+      populate: { path: "user", select: "-password -refreshToken" },
+    })
     .populate("service", "_id name")
     .populate("category", "_id name")
     .populate("addedBy", "_id name role")
