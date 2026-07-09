@@ -164,9 +164,7 @@ const registerPartner = asyncHandler(async (req, res) => {
     const uploaded = await Promise.all(
       req.files.map((file) => uploadOnCloudinary(file.path))
     );
-    serviceImages = uploaded
-      .filter(Boolean)
-      .map((result) => result.secure_url);
+    serviceImages = uploaded.filter(Boolean).map((result) => result.secure_url);
   }
 
   const { otp, otpExpiry } = generateOtp();
@@ -193,7 +191,9 @@ const registerPartner = asyncHandler(async (req, res) => {
     { upsert: true, new: true }
   );
 
-  await sendOtpEmail({ name: fullName, email: normalizedEmail, otp });
+  sendOtpEmail({ name: fullName, email: normalizedEmail, otp }).catch((error) =>
+    console.error("Failed to send partner OTP email:", error.message)
+  );
 
   return res
     .status(200)
