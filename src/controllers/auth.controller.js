@@ -63,6 +63,55 @@ const registerCustomer = asyncHandler(async (req, res) => {
     );
 });
 
+const VALID_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const parseBusinessHours = (businessHours) => {
+  if (businessHours == null) return [];
+
+  let parsed = businessHours;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      throw new ApiError(400, "businessHours must be valid JSON");
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new ApiError(400, "businessHours must be an array");
+  }
+
+  return parsed.map((entry) => {
+    const { day, isOpen, startTime, endTime } = entry ?? {};
+
+    if (!VALID_DAYS.includes(day)) {
+      throw new ApiError(400, `Invalid day in businessHours: ${day}`);
+    }
+
+    if (isOpen && (!startTime || !endTime)) {
+      throw new ApiError(
+        400,
+        `startTime and endTime are required when ${day} is open`
+      );
+    }
+
+    return {
+      day,
+      isOpen: Boolean(isOpen),
+      startTime: isOpen ? startTime : null,
+      endTime: isOpen ? endTime : null,
+    };
+  });
+};
+
 const registerPartner = asyncHandler(async (req, res) => {
   const {
     fullName,
@@ -73,6 +122,7 @@ const registerPartner = asyncHandler(async (req, res) => {
     longitude,
     latitude,
     description,
+    businessHours,
   } = req.body ?? {};
 
   if (
@@ -106,13 +156,17 @@ const registerPartner = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) throw new ApiError(409, "Email is already registered");
 
+  const parsedBusinessHours = parseBusinessHours(businessHours);
+
   // Upload images to Cloudinary now so the URLs can be stored in pending
-  const serviceImages = [];
+  let serviceImages = [];
   if (req.files && req.files.length > 0) {
-    for (const file of req.files) {
-      const uploaded = await uploadOnCloudinary(file.path);
-      if (uploaded) serviceImages.push(uploaded.secure_url);
-    }
+    const uploaded = await Promise.all(
+      req.files.map((file) => uploadOnCloudinary(file.path))
+    );
+    serviceImages = uploaded
+      .filter(Boolean)
+      .map((result) => result.secure_url);
   }
 
   const { otp, otpExpiry } = generateOtp();
@@ -133,6 +187,7 @@ const registerPartner = asyncHandler(async (req, res) => {
         latitude: parsedLat,
         description: description?.trim() || "",
         serviceImages,
+        businessHours: parsedBusinessHours,
       },
     },
     { upsert: true, new: true }
@@ -204,6 +259,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
         coordinates: [data.longitude, data.latitude],
       },
       serviceImages: data.serviceImages,
+      businessHours: data.businessHours,
     });
 
     responseData = await Partner.findById(partner._id).populate(

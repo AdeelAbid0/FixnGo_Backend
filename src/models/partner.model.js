@@ -19,6 +19,27 @@ const partnerSchema = new mongoose.Schema(
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
     description: { type: String, trim: true },
     serviceImages: [{ type: String }],
+    businessHours: [
+      {
+        _id: false,
+        day: {
+          type: String,
+          enum: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+          ],
+          required: true,
+        },
+        isOpen: { type: Boolean, default: false },
+        startTime: { type: String, default: null },
+        endTime: { type: String, default: null },
+      },
+    ],
     status: {
       type: String,
       enum: ["pending", "active", "rejected", "inactive"],

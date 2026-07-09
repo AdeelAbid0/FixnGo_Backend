@@ -15,7 +15,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
 router.post("/register/customer", registerCustomer);
-router.post("/register/partner", upload.array("serviceImages", 5), registerPartner);
+router.post("/register/partner", upload.array("serviceImages", 10), registerPartner);
 router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/login", login);
