@@ -158,13 +158,21 @@ const registerPartner = asyncHandler(async (req, res) => {
 
   const parsedBusinessHours = parseBusinessHours(businessHours);
 
-  // Upload images to Cloudinary now so the URLs can be stored in pending
-  let serviceImages = [];
+  // Upload images to Cloudinary now so the URLs can be stored in pending.
+  // Uploaded in small batches instead of all at once to avoid spiking
+  // memory/CPU on constrained hosts when several images are sent together.
+  const serviceImages = [];
   if (req.files && req.files.length > 0) {
-    const uploaded = await Promise.all(
-      req.files.map((file) => uploadOnCloudinary(file.path))
-    );
-    serviceImages = uploaded.filter(Boolean).map((result) => result.secure_url);
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < req.files.length; i += BATCH_SIZE) {
+      const batch = req.files.slice(i, i + BATCH_SIZE);
+      const uploaded = await Promise.all(
+        batch.map((file) => uploadOnCloudinary(file.path))
+      );
+      serviceImages.push(
+        ...uploaded.filter(Boolean).map((result) => result.secure_url)
+      );
+    }
   }
 
   const { otp, otpExpiry } = generateOtp();
