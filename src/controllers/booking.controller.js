@@ -76,7 +76,11 @@ const createBooking = asyncHandler(async (req, res) => {
 const fetchBookingsWithDetails = async (filter) => {
   const bookings = await Booking.find(filter)
     .populate("user", "_id name email")
-    .populate("partner", "_id businessName location")
+    .populate({
+      path: "partner",
+      select: "_id businessName location user",
+      populate: { path: "user", select: "phone" },
+    })
     .populate("services", "_id name")
     .sort({ createdAt: -1 });
 
@@ -92,6 +96,10 @@ const fetchBookingsWithDetails = async (filter) => {
 
   return bookings.map((b) => {
     const booking = b.toObject();
+    if (booking.partner) {
+      booking.partner.phone = booking.partner.user?.phone || null;
+      delete booking.partner.user;
+    }
     booking.services = booking.services.map((s) => {
       const ps = psMap[`${booking.partner?._id}_${s._id}`];
       return {
