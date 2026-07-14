@@ -7,6 +7,7 @@ import partnerRouter from "./routes/partner.routes.js";
 import categoryRouter from "./routes/category.routes.js";
 import rejectionReasonRouter from "./routes/rejectionReason.routes.js";
 import bookingRouter from "./routes/booking.routes.js";
+import dashboardRouter from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/v1/partners", partnerRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/rejection-reasons", rejectionReasonRouter);
 app.use("/api/v1/bookings", bookingRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 // global error handler
 app.use((err, req, res, next) => {

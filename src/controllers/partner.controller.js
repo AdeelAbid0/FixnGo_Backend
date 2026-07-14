@@ -41,9 +41,10 @@ const getAllPartners = asyncHandler(async (req, res) => {
 });
 
 const updatePartnerStatus = asyncHandler(async (req, res) => {
-  const { id, status } = req.body;
+  const { id, partnerId, status, reasonIds, detail } = req.body;
+  const targetId = id || partnerId;
 
-  if (!id) throw new ApiError(400, "Partner id is required");
+  if (!targetId) throw new ApiError(400, "Partner id is required");
 
   const allowedStatuses = ["pending", "approve", "rejected", "inactive"];
   if (!allowedStatuses.includes(status)) {
@@ -55,8 +56,22 @@ const updatePartnerStatus = asyncHandler(async (req, res) => {
 
   const resolvedStatus = status === "approve" ? "active" : status;
 
+  if (resolvedStatus === "rejected") {
+    if (!Array.isArray(reasonIds) || reasonIds.length === 0) {
+      throw new ApiError(
+        400,
+        "reasonIds (array) is required when rejecting a partner"
+      );
+    }
+
+    const reasons = await RejectionReason.find({ _id: { $in: reasonIds } });
+    if (reasons.length !== reasonIds.length) {
+      throw new ApiError(404, "One or more rejection reasons not found");
+    }
+  }
+
   const partner = await Partner.findByIdAndUpdate(
-    id,
+    targetId,
     { status: resolvedStatus },
     { new: true }
   )
@@ -65,6 +80,17 @@ const updatePartnerStatus = asyncHandler(async (req, res) => {
 
   if (!partner) {
     throw new ApiError(404, "Partner not found");
+  }
+
+  if (resolvedStatus === "rejected") {
+    const removedData = { partner: targetId, reasons: reasonIds };
+    if (detail) removedData.detail = detail.trim();
+
+    await RemovedPartner.findOneAndUpdate(
+      { partner: targetId },
+      removedData,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
   }
 
   return res
