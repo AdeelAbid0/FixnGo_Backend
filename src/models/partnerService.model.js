@@ -38,7 +38,7 @@ const partnerServiceSchema = new mongoose.Schema(
     },
     fuelType: {
       type: String,
-      enum: ["petrol", "diesel", "hybrid", "electric", "cng_lpg"],
+      enum: ["all", "petrol", "diesel", "hybrid", "electric", "cng_lpg"],
       trim: true,
     },
     description: { type: String, trim: true, default: "" },

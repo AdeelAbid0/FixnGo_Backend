@@ -391,9 +391,14 @@ const getPartnersByService = asyncHandler(async (req, res) => {
   const service = await Service.findById(serviceId);
   if (!service) throw new ApiError(404, "Service not found");
 
+  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
+    "_id"
+  );
+
   const partnerServices = await PartnerService.find({
     service: serviceId,
     status: "active",
+    partner: { $in: activePartnerIds },
   }).populate({
     path: "partner",
     populate: { path: "user", select: "-password -refreshToken" },
@@ -438,7 +443,14 @@ const getPartnersByService = asyncHandler(async (req, res) => {
 });
 
 const getAllPartnerServices = asyncHandler(async (req, res) => {
-  const services = await PartnerService.find({ status: "active" })
+  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
+    "_id"
+  );
+
+  const services = await PartnerService.find({
+    status: "active",
+    partner: { $in: activePartnerIds },
+  })
     .populate({ path: "partner", select: "_id businessName" })
     .populate("service", "_id name")
     .populate("category", "_id name")
@@ -459,7 +471,11 @@ const getAllPartnerServices = asyncHandler(async (req, res) => {
 const getServicesByFilter = asyncHandler(async (req, res) => {
   const { categoryId, carType, fuelType } = req.query;
 
-  const filter = { status: "active" };
+  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
+    "_id"
+  );
+
+  const filter = { status: "active", partner: { $in: activePartnerIds } };
 
   if (categoryId) {
     const category = await Category.findById(categoryId);
@@ -471,8 +487,8 @@ const getServicesByFilter = asyncHandler(async (req, res) => {
     filter.carType = { $in: [carType, "all"] };
   }
 
-  if (fuelType) {
-    filter.fuelType = fuelType;
+  if (fuelType && fuelType !== "all") {
+    filter.fuelType = { $in: [fuelType, "all"] };
   }
 
   const services = await PartnerService.find(filter)
@@ -498,17 +514,22 @@ const getPartnersByFilter = asyncHandler(async (req, res) => {
   const service = await Service.findById(serviceId);
   if (!service) throw new ApiError(404, "Service not found");
 
+  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
+    "_id"
+  );
+
   const typeFilter = {};
   if (carType && carType !== "all") {
     typeFilter.carType = { $in: [carType, "all"] };
   }
-  if (fuelType) {
-    typeFilter.fuelType = fuelType;
+  if (fuelType && fuelType !== "all") {
+    typeFilter.fuelType = { $in: [fuelType, "all"] };
   }
 
   const partnerServices = await PartnerService.find({
     service: serviceId,
     status: "active",
+    partner: { $in: activePartnerIds },
     ...typeFilter,
   }).populate({
     path: "partner",
