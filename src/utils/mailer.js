@@ -1,11 +1,28 @@
 import nodemailer from "nodemailer";
+import net from "node:net";
+
+// nodemailer's built-in DNS resolution (v8.x) resolves both A and AAAA
+// records and picks one at random, ignoring the `family` option. Hosts
+// without outbound IPv6 (e.g. Railway) then get ENETUNREACH whenever it
+// picks an IPv6 address. Connecting the socket ourselves with an explicit
+// IPv4-only lookup avoids that and lets nodemailer perform the TLS upgrade
+// as usual.
+const connectIpv4 = (options, callback) => {
+  const socket = net.connect({
+    host: options.host,
+    port: options.port,
+    family: 4,
+  });
+  socket.once("connect", () => callback(null, { connection: socket }));
+  socket.once("error", callback);
+};
 
 const createTransporter = () =>
   nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    family: 4,
+    getSocket: connectIpv4,
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
@@ -45,7 +62,12 @@ export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
   });
 };
 
-export const sendPartnerCredentials = async ({ name, email, password, otp }) => {
+export const sendPartnerCredentials = async ({
+  name,
+  email,
+  password,
+  otp,
+}) => {
   await createTransporter().sendMail({
     from: `"FixNGo" <${process.env.MAIL_USER}>`,
     to: email,
