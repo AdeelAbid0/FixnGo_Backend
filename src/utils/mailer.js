@@ -1,37 +1,19 @@
-import nodemailer from "nodemailer";
-import net from "node:net";
+import { Resend } from "resend";
 
-// nodemailer's built-in DNS resolution (v8.x) resolves both A and AAAA
-// records and picks one at random, ignoring the `family` option. Hosts
-// without outbound IPv6 (e.g. Railway) then get ENETUNREACH whenever it
-// picks an IPv6 address. Connecting the socket ourselves with an explicit
-// IPv4-only lookup avoids that and lets nodemailer perform the TLS upgrade
-// as usual.
-const connectIpv4 = (options, callback) => {
-  const socket = net.connect({
-    host: options.host,
-    port: options.port,
-    family: 4,
-  });
-  socket.once("connect", () => callback(null, { connection: socket }));
-  socket.once("error", callback);
+// Railway (and many PaaS providers) block/throttle outbound SMTP ports
+// (25/465/587), which made Gmail SMTP time out in production even though
+// it worked locally. Resend sends over HTTPS, which isn't subject to that
+// egress restriction.
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM = `"FixNGo" <${process.env.MAIL_FROM}>`;
+
+const send = async ({ to, subject, html }) => {
+  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+  if (error) throw new Error(error.message || "Failed to send email");
 };
 
-const createTransporter = () =>
-  nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    getSocket: connectIpv4,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
-
 export const sendOtpEmail = async ({ name, email, otp }) => {
-  await createTransporter().sendMail({
-    from: `"FixNGo" <${process.env.MAIL_USER}>`,
+  await send({
     to: email,
     subject: "FixNGo – Verify Your Email",
     html: `
@@ -46,8 +28,7 @@ export const sendOtpEmail = async ({ name, email, otp }) => {
 };
 
 export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
-  await createTransporter().sendMail({
-    from: `"FixNGo" <${process.env.MAIL_USER}>`,
+  await send({
     to: email,
     subject: "FixNGo – Password Reset OTP",
     html: `
@@ -62,14 +43,8 @@ export const sendPasswordResetOtpEmail = async ({ name, email, otp }) => {
   });
 };
 
-export const sendPartnerCredentials = async ({
-  name,
-  email,
-  password,
-  otp,
-}) => {
-  await createTransporter().sendMail({
-    from: `"FixNGo" <${process.env.MAIL_USER}>`,
+export const sendPartnerCredentials = async ({ name, email, password, otp }) => {
+  await send({
     to: email,
     subject: "Welcome to FixNGo – Your Partner Account Credentials",
     html: `

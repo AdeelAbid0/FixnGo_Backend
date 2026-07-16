@@ -51,7 +51,9 @@ const registerCustomer = asyncHandler(async (req, res) => {
     { upsert: true, new: true }
   );
 
-  await sendOtpEmail({ name, email: normalizedEmail, otp });
+  sendOtpEmail({ name, email: normalizedEmail, otp }).catch((error) =>
+    console.error("Failed to send customer OTP email:", error.message)
+  );
 
   return res
     .status(200)
@@ -366,7 +368,9 @@ const resendOtp = asyncHandler(async (req, res) => {
 
   const name =
     pending.role === "partner" ? pending.data.fullName : pending.data.name;
-  await sendOtpEmail({ name, email: normalizedEmail, otp });
+  sendOtpEmail({ name, email: normalizedEmail, otp }).catch((error) =>
+    console.error("Failed to send OTP email:", error.message)
+  );
 
   return res
     .status(200)
@@ -390,11 +394,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
   user.resetOtpVerified = false;
   await user.save({ validateBeforeSave: false });
 
-  await sendPasswordResetOtpEmail({
+  sendPasswordResetOtpEmail({
     name: user.name,
     email: normalizedEmail,
     otp,
-  });
+  }).catch((error) =>
+    console.error("Failed to send password reset OTP email:", error.message)
+  );
 
   return res
     .status(200)
@@ -423,11 +429,13 @@ const resendForgotPasswordOtp = asyncHandler(async (req, res) => {
   user.resetOtpVerified = false;
   await user.save({ validateBeforeSave: false });
 
-  await sendPasswordResetOtpEmail({
+  sendPasswordResetOtpEmail({
     name: user.name,
     email: normalizedEmail,
     otp,
-  });
+  }).catch((error) =>
+    console.error("Failed to send password reset OTP email:", error.message)
+  );
 
   return res
     .status(200)
