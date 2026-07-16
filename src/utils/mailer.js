@@ -1,15 +1,15 @@
-import { Resend } from "resend";
+import sgMail from "@sendgrid/mail";
 
 // Railway (and many PaaS providers) block/throttle outbound SMTP ports
 // (25/465/587), which made Gmail SMTP time out in production even though
-// it worked locally. Resend sends over HTTPS, which isn't subject to that
-// egress restriction.
-const resend = new Resend(process.env.RESEND_API_KEY);
+// it worked locally. SendGrid sends over HTTPS, which isn't subject to
+// that egress restriction. MAIL_FROM must be an address verified under
+// SendGrid's Single Sender Verification (or a verified domain).
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const FROM = `"FixNGo" <${process.env.MAIL_FROM}>`;
 
 const send = async ({ to, subject, html }) => {
-  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
-  if (error) throw new Error(error.message || "Failed to send email");
+  await sgMail.send({ from: FROM, to, subject, html });
 };
 
 export const sendOtpEmail = async ({ name, email, otp }) => {
