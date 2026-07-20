@@ -13,6 +13,18 @@ import {
   getPartnersByService,
   getServicesByFilter,
   getPartnersByFilter,
+  getPartnerProfile,
+  updatePartnerProfile,
+  getPartnerNotificationSettings,
+  updatePartnerNotificationSettings,
+  getBusinessHours,
+  updateBusinessHours,
+  getBusinessInfo,
+  updateBusinessInfo,
+  getBusinessImages,
+  updateBusinessImages,
+  getAvailabilityStatus,
+  updateAvailabilityStatus,
 } from "../controllers/partner.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -45,5 +57,80 @@ router.get("/getAllPartnerServices", getAllPartnerServices);
 router.get("/getPartnersByService", getPartnersByService);
 router.get("/getServicesByFilter", getServicesByFilter);
 router.get("/getPartnersByFilter", getPartnersByFilter);
+
+router.get("/profile", verifyToken, requireRole("partner"), getPartnerProfile);
+router.patch(
+  "/profile",
+  verifyToken,
+  requireRole("partner"),
+  upload.single("profileImage"),
+  updatePartnerProfile
+);
+
+router.get(
+  "/getNotificationSettings",
+  verifyToken,
+  requireRole("partner"),
+  getPartnerNotificationSettings
+);
+router.patch(
+  "/updateNotificationSettings",
+  verifyToken,
+  requireRole("partner"),
+  updatePartnerNotificationSettings
+);
+
+router.get(
+  "/getBusinessHours",
+  verifyToken,
+  requireRole("partner"),
+  getBusinessHours
+);
+router.patch(
+  "/updateBusinessHours",
+  verifyToken,
+  requireRole("partner"),
+  updateBusinessHours
+);
+
+router.get(
+  "/getBusinessInfo",
+  verifyToken,
+  requireRole("partner"),
+  getBusinessInfo
+);
+router.patch(
+  "/updateBusinessInfo",
+  verifyToken,
+  requireRole("partner"),
+  updateBusinessInfo
+);
+
+router.get(
+  "/getBusinessImages",
+  verifyToken,
+  requireRole("partner"),
+  getBusinessImages
+);
+router.patch(
+  "/updateBusinessImages",
+  verifyToken,
+  requireRole("partner"),
+  upload.array("serviceImages"),
+  updateBusinessImages
+);
+
+router.get(
+  "/getAvailabilityStatus",
+  verifyToken,
+  requireRole("partner"),
+  getAvailabilityStatus
+);
+router.patch(
+  "/updateAvailabilityStatus",
+  verifyToken,
+  requireRole("partner"),
+  updateAvailabilityStatus
+);
 
 export default router;

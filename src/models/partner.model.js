@@ -45,6 +45,11 @@ const partnerSchema = new mongoose.Schema(
       enum: ["pending", "active", "rejected", "inactive"],
       default: "pending",
     },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "offline"],
+      default: "available",
+    },
   },
   { timestamps: true }
 );

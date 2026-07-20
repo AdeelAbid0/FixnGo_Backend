@@ -417,9 +417,10 @@ const getPartnersByService = asyncHandler(async (req, res) => {
   const service = await Service.findById(serviceId);
   if (!service) throw new ApiError(404, "Service not found");
 
-  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
-    "_id"
-  );
+  const activePartnerIds = await Partner.find({
+    status: "active",
+    availabilityStatus: "available",
+  }).distinct("_id");
 
   const partnerServices = await PartnerService.find({
     service: serviceId,
@@ -469,9 +470,10 @@ const getPartnersByService = asyncHandler(async (req, res) => {
 });
 
 const getAllPartnerServices = asyncHandler(async (req, res) => {
-  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
-    "_id"
-  );
+  const activePartnerIds = await Partner.find({
+    status: "active",
+    availabilityStatus: "available",
+  }).distinct("_id");
 
   const services = await PartnerService.find({
     status: "active",
@@ -497,9 +499,10 @@ const getAllPartnerServices = asyncHandler(async (req, res) => {
 const getServicesByFilter = asyncHandler(async (req, res) => {
   const { categoryId, carType, fuelType } = req.query;
 
-  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
-    "_id"
-  );
+  const activePartnerIds = await Partner.find({
+    status: "active",
+    availabilityStatus: "available",
+  }).distinct("_id");
 
   const filter = { status: "active", partner: { $in: activePartnerIds } };
 
@@ -540,9 +543,10 @@ const getPartnersByFilter = asyncHandler(async (req, res) => {
   const service = await Service.findById(serviceId);
   if (!service) throw new ApiError(404, "Service not found");
 
-  const activePartnerIds = await Partner.find({ status: "active" }).distinct(
-    "_id"
-  );
+  const activePartnerIds = await Partner.find({
+    status: "active",
+    availabilityStatus: "available",
+  }).distinct("_id");
 
   const typeFilter = {};
   if (carType && carType !== "all") {
@@ -601,6 +605,353 @@ const getPartnersByFilter = asyncHandler(async (req, res) => {
     );
 });
 
+const getBusinessImages = asyncHandler(async (req, res) => {
+  const partner = await Partner.findOne({ user: req.user._id }).select(
+    "serviceImages"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Business images fetched successfully",
+        partner.serviceImages
+      )
+    );
+});
+
+const updateBusinessImages = asyncHandler(async (req, res) => {
+  const partner = await Partner.findOne({ user: req.user._id });
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  if (!req.files || req.files.length === 0) {
+    throw new ApiError(400, "At least one image is required");
+  }
+
+  const serviceImages = [];
+  for (const file of req.files) {
+    const uploaded = await uploadOnCloudinary(file.path);
+    if (uploaded) serviceImages.push(uploaded.secure_url);
+  }
+
+  partner.serviceImages = serviceImages;
+  await partner.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Business images updated successfully",
+        partner.serviceImages
+      )
+    );
+});
+
+const getAvailabilityStatus = asyncHandler(async (req, res) => {
+  const partner = await Partner.findOne({ user: req.user._id }).select(
+    "availabilityStatus"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Availability status fetched successfully",
+        partner.availabilityStatus
+      )
+    );
+});
+
+const updateAvailabilityStatus = asyncHandler(async (req, res) => {
+  const { availabilityStatus } = req.body ?? {};
+
+  if (!["available", "offline"].includes(availabilityStatus)) {
+    throw new ApiError(
+      400,
+      "availabilityStatus must be either 'available' or 'offline'"
+    );
+  }
+
+  const partner = await Partner.findOneAndUpdate(
+    { user: req.user._id },
+    { availabilityStatus },
+    { new: true }
+  ).select("availabilityStatus");
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Availability status updated successfully",
+        partner.availabilityStatus
+      )
+    );
+});
+
+const getBusinessInfo = asyncHandler(async (req, res) => {
+  const partner = await Partner.findOne({ user: req.user._id }).select(
+    "businessName description location"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Business info fetched successfully", {
+        businessName: partner.businessName,
+        description: partner.description,
+        longitude: partner.location?.coordinates?.[0],
+        latitude: partner.location?.coordinates?.[1],
+      })
+    );
+});
+
+const updateBusinessInfo = asyncHandler(async (req, res) => {
+  const { businessName, description, longitude, latitude } = req.body ?? {};
+
+  const partner = await Partner.findOne({ user: req.user._id });
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  if (businessName && businessName.trim()) {
+    partner.businessName = businessName.trim();
+  }
+
+  if (description != null) {
+    partner.description = description.trim();
+  }
+
+  if (longitude != null || latitude != null) {
+    if (longitude == null || latitude == null) {
+      throw new ApiError(
+        400,
+        "Both longitude and latitude are required to update location"
+      );
+    }
+
+    const parsedLng = parseFloat(longitude);
+    const parsedLat = parseFloat(latitude);
+
+    if (
+      isNaN(parsedLng) ||
+      isNaN(parsedLat) ||
+      parsedLng < -180 ||
+      parsedLng > 180 ||
+      parsedLat < -90 ||
+      parsedLat > 90
+    ) {
+      throw new ApiError(400, "Invalid longitude or latitude values");
+    }
+
+    partner.location = { type: "Point", coordinates: [parsedLng, parsedLat] };
+  }
+
+  await partner.save();
+
+  const updatedPartner = await Partner.findById(partner._id).select(
+    "businessName description location"
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Business info updated successfully", {
+        businessName: updatedPartner.businessName,
+        description: updatedPartner.description,
+        longitude: updatedPartner.location?.coordinates?.[0],
+        latitude: updatedPartner.location?.coordinates?.[1],
+      })
+    );
+});
+
+const BUSINESS_HOURS_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const getBusinessHours = asyncHandler(async (req, res) => {
+  const partner = await Partner.findOne({ user: req.user._id }).select(
+    "businessHours"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Business hours fetched successfully",
+        partner.businessHours
+      )
+    );
+});
+
+const updateBusinessHours = asyncHandler(async (req, res) => {
+  const { businessHours } = req.body ?? {};
+
+  if (!Array.isArray(businessHours) || businessHours.length === 0) {
+    throw new ApiError(400, "businessHours (array) is required");
+  }
+
+  for (const entry of businessHours) {
+    if (!entry?.day || !BUSINESS_HOURS_DAYS.includes(entry.day)) {
+      throw new ApiError(
+        400,
+        `Invalid or missing day. Allowed values: ${BUSINESS_HOURS_DAYS.join(", ")}`
+      );
+    }
+  }
+
+  const partner = await Partner.findOneAndUpdate(
+    { user: req.user._id },
+    { businessHours },
+    { new: true, runValidators: true }
+  ).select("businessHours");
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Business hours updated successfully",
+        partner.businessHours
+      )
+    );
+});
+
+const getPartnerProfile = asyncHandler(async (req, res) => {
+  const partner = await User.findById(req.user._id).select(
+    "name email phone profileImage"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const partnerDoc = await Partner.findOne({ user: req.user._id }).select(
+    "serviceImages"
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Partner profile fetched successfully", {
+        ...partner.toObject(),
+        serviceImages: partnerDoc?.serviceImages || [],
+      })
+    );
+});
+
+const updatePartnerProfile = asyncHandler(async (req, res) => {
+  const { name, phone, email } = req.body;
+
+  const partner = await User.findById(req.user._id);
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  if (email && email.trim()) {
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail !== partner.email) {
+      const existingUser = await User.findOne({ email: normalizedEmail });
+      if (existingUser) throw new ApiError(409, "Email is already registered");
+      partner.email = normalizedEmail;
+    }
+  }
+
+  if (name && name.trim()) partner.name = name.trim();
+  if (phone && phone.trim()) partner.phone = phone.trim();
+
+  if (req.file) {
+    const uploaded = await uploadOnCloudinary(req.file.path);
+    if (uploaded) partner.profileImage = uploaded.secure_url;
+  }
+
+  await partner.save({ validateBeforeSave: false });
+
+  const updatedPartner = await User.findById(partner._id).select(
+    "name email phone profileImage"
+  );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Partner profile updated successfully", updatedPartner)
+    );
+});
+
+const PARTNER_NOTIFICATION_KEYS = [
+  "newBookings",
+  "jobReminders",
+  "paymentsPayouts",
+  "reviewsRatings",
+];
+
+const getPartnerNotificationSettings = asyncHandler(async (req, res) => {
+  const partner = await User.findById(req.user._id).select(
+    "notificationSettings"
+  );
+
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const notificationSettings = {};
+  PARTNER_NOTIFICATION_KEYS.forEach((key) => {
+    notificationSettings[key] = partner.notificationSettings[key];
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Notification settings fetched successfully",
+        notificationSettings
+      )
+    );
+});
+
+const updatePartnerNotificationSettings = asyncHandler(async (req, res) => {
+  const partner = await User.findById(req.user._id);
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  PARTNER_NOTIFICATION_KEYS.forEach((key) => {
+    if (typeof req.body[key] === "boolean") {
+      partner.notificationSettings[key] = req.body[key];
+    }
+  });
+
+  await partner.save({ validateBeforeSave: false });
+
+  const notificationSettings = {};
+  PARTNER_NOTIFICATION_KEYS.forEach((key) => {
+    notificationSettings[key] = partner.notificationSettings[key];
+  });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        "Notification settings updated successfully",
+        notificationSettings
+      )
+    );
+});
+
 const getPartnerServices = asyncHandler(async (req, res) => {
   const { partnerId } = req.query;
 
@@ -636,4 +987,16 @@ export {
   getPartnersByService,
   getServicesByFilter,
   getPartnersByFilter,
+  getPartnerProfile,
+  updatePartnerProfile,
+  getPartnerNotificationSettings,
+  updatePartnerNotificationSettings,
+  getBusinessHours,
+  updateBusinessHours,
+  getBusinessInfo,
+  updateBusinessInfo,
+  getBusinessImages,
+  updateBusinessImages,
+  getAvailabilityStatus,
+  updateAvailabilityStatus,
 };
