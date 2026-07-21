@@ -13,6 +13,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 const getAllPartners = asyncHandler(async (req, res) => {
   const partners = await Partner.find({ status: { $ne: "rejected" } })
     .populate("user", "-password -refreshToken")
+    .populate("addedBy", "_id name role")
     .sort({ createdAt: -1 });
 
   const partnerIds = partners.map((p) => p._id);
@@ -76,6 +77,7 @@ const updatePartnerStatus = asyncHandler(async (req, res) => {
     { new: true }
   )
     .populate("user", "-password -refreshToken")
+    .populate("addedBy", "_id name role")
     .populate("services", "name category");
 
   if (!partner) {
@@ -103,6 +105,7 @@ const updatePartnerStatus = asyncHandler(async (req, res) => {
 const getActivePartners = asyncHandler(async (req, res) => {
   const partners = await Partner.find({ status: "active" })
     .populate("user", "-password -refreshToken")
+    .populate("addedBy", "_id name role")
     .sort({ createdAt: -1 });
 
   const partnerIds = partners.map((p) => p._id);
@@ -189,6 +192,7 @@ const addPartner = asyncHandler(async (req, res) => {
 
   const partner = await Partner.create({
     user: user._id,
+    addedBy: req.user._id,
     businessName: businessName.trim(),
     description: description?.trim() || "",
     location: { type: "Point", coordinates: [parsedLng, parsedLat] },
@@ -196,10 +200,9 @@ const addPartner = asyncHandler(async (req, res) => {
     status: "active",
   });
 
-  const responseData = await Partner.findById(partner._id).populate(
-    "user",
-    "-password -refreshToken"
-  );
+  const responseData = await Partner.findById(partner._id)
+    .populate("user", "-password -refreshToken")
+    .populate("addedBy", "_id name role");
 
   return res
     .status(201)
@@ -237,6 +240,7 @@ const removePartner = asyncHandler(async (req, res) => {
       path: "partner",
       populate: [
         { path: "user", select: "-password -refreshToken" },
+        { path: "addedBy", select: "_id name role" },
         { path: "services", select: "name category" },
       ],
     })
@@ -253,6 +257,7 @@ const getRemovedPartners = asyncHandler(async (req, res) => {
       path: "partner",
       populate: [
         { path: "user", select: "-password -refreshToken" },
+        { path: "addedBy", select: "_id name role" },
         {
           path: "services",
           select: "name category",

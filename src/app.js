@@ -9,6 +9,7 @@ import rejectionReasonRouter from "./routes/rejectionReason.routes.js";
 import bookingRouter from "./routes/booking.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
 import customerRouter from "./routes/customer.routes.js";
+import superadminRouter from "./routes/superadmin.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/v1/rejection-reasons", rejectionReasonRouter);
 app.use("/api/v1/bookings", bookingRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/customers", customerRouter);
+app.use("/api/v1/superadmin", superadminRouter);
 
 // global error handler
 app.use((err, req, res, next) => {

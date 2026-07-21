@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: { type: String, trim: true },
     profileImage: { type: String, default: "" },
+    country: { type: String, trim: true, default: "" },
     notificationSettings: {
       partnerMessages: { type: Boolean, default: true },
       paymentInvoiceAlerts: { type: Boolean, default: true },
@@ -29,6 +30,10 @@ const userSchema = new mongoose.Schema(
       jobReminders: { type: Boolean, default: true },
       paymentsPayouts: { type: Boolean, default: true },
       reviewsRatings: { type: Boolean, default: true },
+      newPartnerRequest: { type: Boolean, default: true },
+      partnerApprovalRejection: { type: Boolean, default: true },
+      paymentAlerts: { type: Boolean, default: true },
+      systemAlerts: { type: Boolean, default: true },
     },
     isActive: { type: Boolean, default: true },
     refreshToken: { type: String },

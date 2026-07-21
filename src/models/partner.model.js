@@ -8,6 +8,10 @@ const partnerSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    addedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     businessName: { type: String, required: true, trim: true },
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },

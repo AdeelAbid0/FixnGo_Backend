@@ -262,6 +262,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
     const partner = await Partner.create({
       user: user._id,
+      addedBy: user._id,
       businessName: data.businessName,
       description: data.description,
       location: {
@@ -272,10 +273,9 @@ const verifyOtp = asyncHandler(async (req, res) => {
       businessHours: data.businessHours,
     });
 
-    responseData = await Partner.findById(partner._id).populate(
-      "user",
-      "-password -refreshToken"
-    );
+    responseData = await Partner.findById(partner._id)
+      .populate("user", "-password -refreshToken")
+      .populate("addedBy", "_id name role");
   }
 
   await PendingRegistration.deleteOne({ email: normalizedEmail });
