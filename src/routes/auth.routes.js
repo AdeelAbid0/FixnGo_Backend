@@ -6,6 +6,7 @@ import {
   resendOtp,
   login,
   googleLogin,
+  registerPartnerWithGoogle,
   forgotPassword,
   resendForgotPasswordOtp,
   verifyForgotPasswordOtp,
@@ -23,6 +24,11 @@ router.post("/verify-otp", verifyOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/login", login);
 router.post("/google", googleLogin);
+router.post(
+  "/register/partner/google",
+  upload.array("serviceImages", 10),
+  registerPartnerWithGoogle
+);
 router.post("/forgot-password", forgotPassword);
 router.post("/forgot-password/resend-otp", resendForgotPasswordOtp);
 router.post("/forgot-password/verify-otp", verifyForgotPasswordOtp);

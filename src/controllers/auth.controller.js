@@ -117,6 +117,45 @@ const parseBusinessHours = (businessHours) => {
   });
 };
 
+const parseGeoCoordinates = (longitude, latitude) => {
+  const parsedLng = parseFloat(longitude);
+  const parsedLat = parseFloat(latitude);
+
+  if (
+    isNaN(parsedLng) ||
+    isNaN(parsedLat) ||
+    parsedLng < -180 ||
+    parsedLng > 180 ||
+    parsedLat < -90 ||
+    parsedLat > 90
+  ) {
+    throw new ApiError(400, "Invalid longitude or latitude values");
+  }
+
+  return { parsedLng, parsedLat };
+};
+
+// Uploads images to Cloudinary in small batches instead of all at once to
+// avoid spiking memory/CPU on constrained hosts when several images are
+// sent together.
+const uploadServiceImages = async (files) => {
+  const serviceImages = [];
+  if (!files || files.length === 0) return serviceImages;
+
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const batch = files.slice(i, i + BATCH_SIZE);
+    const uploaded = await Promise.all(
+      batch.map((file) => uploadOnCloudinary(file.path))
+    );
+    serviceImages.push(
+      ...uploaded.filter(Boolean).map((result) => result.secure_url)
+    );
+  }
+
+  return serviceImages;
+};
+
 const registerPartner = asyncHandler(async (req, res) => {
   const {
     fullName,
@@ -142,19 +181,7 @@ const registerPartner = asyncHandler(async (req, res) => {
     );
   }
 
-  const parsedLng = parseFloat(longitude);
-  const parsedLat = parseFloat(latitude);
-
-  if (
-    isNaN(parsedLng) ||
-    isNaN(parsedLat) ||
-    parsedLng < -180 ||
-    parsedLng > 180 ||
-    parsedLat < -90 ||
-    parsedLat > 90
-  ) {
-    throw new ApiError(400, "Invalid longitude or latitude values");
-  }
+  const { parsedLng, parsedLat } = parseGeoCoordinates(longitude, latitude);
 
   const normalizedEmail = email.toLowerCase();
 
@@ -164,21 +191,7 @@ const registerPartner = asyncHandler(async (req, res) => {
   const parsedBusinessHours = parseBusinessHours(businessHours);
 
   // Upload images to Cloudinary now so the URLs can be stored in pending.
-  // Uploaded in small batches instead of all at once to avoid spiking
-  // memory/CPU on constrained hosts when several images are sent together.
-  const serviceImages = [];
-  if (req.files && req.files.length > 0) {
-    const BATCH_SIZE = 3;
-    for (let i = 0; i < req.files.length; i += BATCH_SIZE) {
-      const batch = req.files.slice(i, i + BATCH_SIZE);
-      const uploaded = await Promise.all(
-        batch.map((file) => uploadOnCloudinary(file.path))
-      );
-      serviceImages.push(
-        ...uploaded.filter(Boolean).map((result) => result.secure_url)
-      );
-    }
-  }
+  const serviceImages = await uploadServiceImages(req.files);
 
   const { otp, otpExpiry } = generateOtp();
 
@@ -420,20 +433,29 @@ const googleLogin = asyncHandler(async (req, res) => {
         );
     }
 
+    if (role === "partner") {
+      // Partner signups need business info, location, hours and gallery
+      // images first. Don't create the account yet — the frontend takes the
+      // user through the "Join as Partner" form (prefilled with this Google
+      // profile) and finishes registration via registerPartnerWithGoogle.
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, "Continue partner registration", {
+            requiresPartnerDetails: true,
+            email: normalizedEmail,
+            name: payload.name || "",
+            picture: payload.picture || "",
+          })
+        );
+    }
+
     user = await User.create({
       name: payload.name || normalizedEmail,
       email: normalizedEmail,
       role,
       profileImage: payload.picture || "",
     });
-
-    if (role === "partner") {
-      await Partner.create({
-        user: user._id,
-        addedBy: user._id,
-        status: "active",
-      });
-    }
   }
 
   if (!user.isActive) {
@@ -441,6 +463,88 @@ const googleLogin = asyncHandler(async (req, res) => {
   }
 
   return respondWithLogin(res, "Login successful", user._id, rememberMe);
+});
+
+// Finishes a Google-signup partner registration started in googleLogin's
+// requiresPartnerDetails step. The Google idToken is re-verified here (it
+// already confirmed the email, so no OTP step is needed) and the account is
+// created and logged in directly once business info, location, hours and
+// gallery images are submitted.
+const registerPartnerWithGoogle = asyncHandler(async (req, res) => {
+  const {
+    idToken,
+    phone,
+    businessName,
+    longitude,
+    latitude,
+    description,
+    businessHours,
+    rememberMe = false,
+  } = req.body ?? {};
+
+  if (!idToken) throw new ApiError(400, "idToken is required");
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw new ApiError(401, "Invalid Google token");
+  }
+
+  if (!payload?.email || !payload.email_verified) {
+    throw new ApiError(401, "Google account email is not verified");
+  }
+
+  if (
+    [phone, businessName].some((field) => !field || !field.trim()) ||
+    [longitude, latitude].some((field) => field == null)
+  ) {
+    throw new ApiError(
+      400,
+      "phone, businessName, longitude and latitude are required"
+    );
+  }
+
+  const { parsedLng, parsedLat } = parseGeoCoordinates(longitude, latitude);
+
+  const normalizedEmail = payload.email.toLowerCase();
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (existingUser) throw new ApiError(409, "Email is already registered");
+
+  const parsedBusinessHours = parseBusinessHours(businessHours);
+  const serviceImages = await uploadServiceImages(req.files);
+
+  const user = await User.create({
+    name: payload.name || normalizedEmail,
+    email: normalizedEmail,
+    role: "partner",
+    phone,
+    profileImage: payload.picture || "",
+  });
+
+  await Partner.create({
+    user: user._id,
+    addedBy: user._id,
+    businessName,
+    description: description?.trim() || "",
+    location: {
+      type: "Point",
+      coordinates: [parsedLng, parsedLat],
+    },
+    serviceImages,
+    businessHours: parsedBusinessHours,
+  });
+
+  return respondWithLogin(
+    res,
+    "Registration complete. Login successful",
+    user._id,
+    rememberMe
+  );
 });
 
 const resendOtp = asyncHandler(async (req, res) => {
@@ -640,6 +744,7 @@ export {
   resendOtp,
   login,
   googleLogin,
+  registerPartnerWithGoogle,
   forgotPassword,
   resendForgotPasswordOtp,
   verifyForgotPasswordOtp,
