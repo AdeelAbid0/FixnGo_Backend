@@ -4,6 +4,8 @@ import {
   updateCustomerProfile,
   getNotificationSettings,
   updateNotificationSettings,
+  toggleBookmarkPartner,
+  getBookmarkedPartners,
 } from "../controllers/customer.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -31,6 +33,19 @@ router.patch(
   verifyToken,
   requireRole("customer"),
   updateNotificationSettings
+);
+
+router.post(
+  "/bookmarks/:partnerId",
+  verifyToken,
+  requireRole("customer"),
+  toggleBookmarkPartner
+);
+router.get(
+  "/bookmarks",
+  verifyToken,
+  requireRole("customer"),
+  getBookmarkedPartners
 );
 
 export default router;

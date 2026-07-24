@@ -1,4 +1,6 @@
 import { User } from "../models/user.model.js";
+import { Partner } from "../models/partner.model.js";
+import { Bookmark } from "../models/bookmark.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -100,9 +102,56 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
     );
 });
 
+const toggleBookmarkPartner = asyncHandler(async (req, res) => {
+  const { partnerId } = req.params;
+
+  const partner = await Partner.findById(partnerId);
+  if (!partner) throw new ApiError(404, "Partner not found");
+
+  const existing = await Bookmark.findOne({
+    customer: req.user._id,
+    partner: partnerId,
+  });
+
+  if (existing) {
+    await existing.deleteOne();
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Partner removed from bookmarks", { bookmarked: false }));
+  }
+
+  await Bookmark.create({ customer: req.user._id, partner: partnerId });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, "Partner added to bookmarks", { bookmarked: true }));
+});
+
+const getBookmarkedPartners = asyncHandler(async (req, res) => {
+  const bookmarks = await Bookmark.find({ customer: req.user._id })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "partner",
+      populate: [
+        { path: "user", select: "-password -refreshToken" },
+        { path: "addedBy", select: "_id name role" },
+      ],
+    });
+
+  const partners = bookmarks
+    .filter((b) => b.partner)
+    .map((b) => ({ ...b.partner.toObject(), bookmarkedAt: b.createdAt }));
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Bookmarked partners fetched successfully", partners));
+});
+
 export {
   getCustomerProfile,
   updateCustomerProfile,
   getNotificationSettings,
   updateNotificationSettings,
+  toggleBookmarkPartner,
+  getBookmarkedPartners,
 };
