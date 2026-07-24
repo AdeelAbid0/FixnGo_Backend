@@ -12,12 +12,11 @@ const partnerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    businessName: { type: String, required: true, trim: true },
+    businessName: { type: String, trim: true, default: "" },
     location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
+      type: { type: String, enum: ["Point"] },
       coordinates: {
         type: [Number], // [longitude, latitude]
-        required: true,
       },
     },
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],

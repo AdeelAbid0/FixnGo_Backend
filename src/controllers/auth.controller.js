@@ -1,3 +1,4 @@
+import { OAuth2Client } from "google-auth-library";
 import { User } from "../models/user.model.js";
 import { Partner } from "../models/partner.model.js";
 import { PendingRegistration } from "../models/pendingRegistration.model.js";
@@ -6,6 +7,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { sendOtpEmail, sendPasswordResetOtpEmail } from "../utils/mailer.js";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateRefreshTokenAndAccessToken = async (userId) => {
   const user = await User.findById(userId);
@@ -291,33 +294,36 @@ const verifyOtp = asyncHandler(async (req, res) => {
     );
 });
 
-const login = asyncHandler(async (req, res) => {
-  const { email, password, rememberMe = false } = req.body;
+const ROLE_NOTIFICATION_KEYS = {
+  customer: [
+    "partnerMessages",
+    "paymentInvoiceAlerts",
+    "bookingReminders",
+    "promotionsOffers",
+  ],
+  partner: ["newBookings", "jobReminders", "paymentsPayouts", "reviewsRatings"],
+  superadmin: [
+    "newPartnerRequest",
+    "partnerApprovalRejection",
+    "paymentAlerts",
+    "systemAlerts",
+  ],
+};
 
-  if (!email || !password) {
-    throw new ApiError(400, "Email and password are required");
-  }
-
-  const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) {
-    throw new ApiError(401, "Invalid email or password");
-  }
-
-  if (!user.isActive) {
-    throw new ApiError(403, "Account is deactivated");
-  }
-
-  const isPasswordValid = await user.isPasswordCorrect(password);
-  if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid email or password");
-  }
-
+const respondWithLogin = async (res, message, userId, rememberMe) => {
   const { accessToken, refreshToken } =
-    await generateRefreshTokenAndAccessToken(user._id);
+    await generateRefreshTokenAndAccessToken(userId);
 
-  const loggedInUser = await User.findById(user._id).select(
+  const loggedInUser = await User.findById(userId).select(
     "-password -refreshToken"
   );
+
+  const allowedKeys = ROLE_NOTIFICATION_KEYS[loggedInUser.role] || [];
+  const notificationSettings = {};
+  allowedKeys.forEach((key) => {
+    notificationSettings[key] = loggedInUser.notificationSettings[key];
+  });
+  const userResponse = { ...loggedInUser.toObject(), notificationSettings };
 
   // rememberMe = true  → refresh token cookie persists for 30 days
   // rememberMe = false → refresh token cookie is a session cookie (cleared on browser close)
@@ -340,12 +346,101 @@ const login = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, accessTokenCookieOptions)
     .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
     .json(
-      new ApiResponse(200, "Login successful", {
-        user: loggedInUser,
+      new ApiResponse(200, message, {
+        user: userResponse,
         accessToken,
         refreshToken,
       })
     );
+};
+
+const login = asyncHandler(async (req, res) => {
+  const { email, password, rememberMe = false } = req.body;
+
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, "Account is deactivated");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid email or password");
+  }
+
+  return respondWithLogin(res, "Login successful", user._id, rememberMe);
+});
+
+const GOOGLE_SIGNUP_ROLES = ["customer", "partner"];
+
+const googleLogin = asyncHandler(async (req, res) => {
+  const { idToken, role, rememberMe = false } = req.body;
+
+  if (!idToken) throw new ApiError(400, "idToken is required");
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw new ApiError(401, "Invalid Google token");
+  }
+
+  if (!payload?.email || !payload.email_verified) {
+    throw new ApiError(401, "Google account email is not verified");
+  }
+
+  const normalizedEmail = payload.email.toLowerCase();
+  let user = await User.findOne({ email: normalizedEmail });
+
+  if (!user) {
+    // New Google account: require the user to pick customer/partner
+    // before we create anything. Frontend re-calls this same endpoint
+    // with the chosen role once the user picks one.
+    if (!GOOGLE_SIGNUP_ROLES.includes(role)) {
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, "Select an account type to continue", {
+            requiresRole: true,
+            email: normalizedEmail,
+            name: payload.name || "",
+            picture: payload.picture || "",
+          })
+        );
+    }
+
+    user = await User.create({
+      name: payload.name || normalizedEmail,
+      email: normalizedEmail,
+      role,
+      profileImage: payload.picture || "",
+    });
+
+    if (role === "partner") {
+      await Partner.create({
+        user: user._id,
+        addedBy: user._id,
+        status: "active",
+      });
+    }
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, "Account is deactivated");
+  }
+
+  return respondWithLogin(res, "Login successful", user._id, rememberMe);
 });
 
 const resendOtp = asyncHandler(async (req, res) => {
@@ -506,14 +601,48 @@ const resetPassword = asyncHandler(async (req, res) => {
     );
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "Current password and new password are required");
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const isCurrentPasswordCorrect = await user.isPasswordCorrect(
+    currentPassword
+  );
+  if (!isCurrentPasswordCorrect) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(
+      400,
+      "New password must be different from the current password"
+    );
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Password changed successfully"));
+});
+
 export {
   registerCustomer,
   registerPartner,
   verifyOtp,
   resendOtp,
   login,
+  googleLogin,
   forgotPassword,
   resendForgotPasswordOtp,
   verifyForgotPasswordOtp,
   resetPassword,
+  changePassword,
 };
