@@ -103,7 +103,9 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
 });
 
 const toggleBookmarkPartner = asyncHandler(async (req, res) => {
-  const { partnerId } = req.params;
+  const { partnerId } = req.body ?? {};
+
+  if (!partnerId) throw new ApiError(400, "partnerId is required");
 
   const partner = await Partner.findById(partnerId);
   if (!partner) throw new ApiError(404, "Partner not found");

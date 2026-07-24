@@ -36,7 +36,7 @@ router.patch(
 );
 
 router.post(
-  "/bookmarks/:partnerId",
+  "/bookmarks",
   verifyToken,
   requireRole("customer"),
   toggleBookmarkPartner
