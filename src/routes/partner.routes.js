@@ -33,7 +33,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
 router.get("/getAllPartners", getAllPartners);
-router.get("/getActivePartners", verifyToken, getActivePartners);
+router.get("/getActivePartners", getActivePartners);
 router.patch("/updateStatus", verifyToken, updatePartnerStatus);
 router.post(
   "/addPartner",
