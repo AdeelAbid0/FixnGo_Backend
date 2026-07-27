@@ -10,6 +10,24 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+const PARTNER_NOTIFICATION_KEYS = [
+  "newBookings",
+  "jobReminders",
+  "paymentsPayouts",
+  "reviewsRatings",
+];
+
+const sanitizePartnerUser = (partnerObj) => {
+  if (partnerObj?.user?.notificationSettings) {
+    const filtered = {};
+    PARTNER_NOTIFICATION_KEYS.forEach((key) => {
+      filtered[key] = partnerObj.user.notificationSettings[key];
+    });
+    partnerObj.user.notificationSettings = filtered;
+  }
+  return partnerObj;
+};
+
 const getAllPartners = asyncHandler(async (req, res) => {
   const partners = await Partner.find({ status: { $ne: "rejected" } })
     .populate("user", "-password -refreshToken")
@@ -31,10 +49,12 @@ const getAllPartners = asyncHandler(async (req, res) => {
     serviceMap[pid].push(ps);
   });
 
-  const result = partners.map((p) => ({
-    ...p.toObject(),
-    services: serviceMap[p._id.toString()] || [],
-  }));
+  const result = partners.map((p) =>
+    sanitizePartnerUser({
+      ...p.toObject(),
+      services: serviceMap[p._id.toString()] || [],
+    })
+  );
 
   return res
     .status(200)
@@ -123,10 +143,12 @@ const getActivePartners = asyncHandler(async (req, res) => {
     serviceMap[pid].push(ps);
   });
 
-  const result = partners.map((p) => ({
-    ...p.toObject(),
-    services: serviceMap[p._id.toString()] || [],
-  }));
+  const result = partners.map((p) =>
+    sanitizePartnerUser({
+      ...p.toObject(),
+      services: serviceMap[p._id.toString()] || [],
+    })
+  );
 
   return res
     .status(200)
@@ -898,13 +920,6 @@ const updatePartnerProfile = asyncHandler(async (req, res) => {
       new ApiResponse(200, "Partner profile updated successfully", updatedPartner)
     );
 });
-
-const PARTNER_NOTIFICATION_KEYS = [
-  "newBookings",
-  "jobReminders",
-  "paymentsPayouts",
-  "reviewsRatings",
-];
 
 const getPartnerNotificationSettings = asyncHandler(async (req, res) => {
   const partner = await User.findById(req.user._id).select(

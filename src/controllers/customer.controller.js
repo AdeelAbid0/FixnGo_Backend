@@ -1,10 +1,29 @@
 import { User } from "../models/user.model.js";
 import { Partner } from "../models/partner.model.js";
 import { Bookmark } from "../models/bookmark.model.js";
+import { PartnerService } from "../models/partnerService.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+
+const PARTNER_NOTIFICATION_KEYS = [
+  "newBookings",
+  "jobReminders",
+  "paymentsPayouts",
+  "reviewsRatings",
+];
+
+const sanitizePartnerUser = (partnerObj) => {
+  if (partnerObj?.user?.notificationSettings) {
+    const filtered = {};
+    PARTNER_NOTIFICATION_KEYS.forEach((key) => {
+      filtered[key] = partnerObj.user.notificationSettings[key];
+    });
+    partnerObj.user.notificationSettings = filtered;
+  }
+  return partnerObj;
+};
 
 const getCustomerProfile = asyncHandler(async (req, res) => {
   const customer = await User.findById(req.user._id).select(
@@ -140,9 +159,30 @@ const getBookmarkedPartners = asyncHandler(async (req, res) => {
       ],
     });
 
-  const partners = bookmarks
-    .filter((b) => b.partner)
-    .map((b) => ({ ...b.partner.toObject(), bookmarkedAt: b.createdAt }));
+  const bookmarkedPartners = bookmarks.filter((b) => b.partner);
+
+  const partnerIds = bookmarkedPartners.map((b) => b.partner._id);
+  const partnerServices = await PartnerService.find({
+    partner: { $in: partnerIds },
+  })
+    .populate("service", "_id name")
+    .populate("category", "_id name")
+    .populate("addedBy", "_id name role");
+
+  const serviceMap = {};
+  partnerServices.forEach((ps) => {
+    const pid = ps.partner.toString();
+    if (!serviceMap[pid]) serviceMap[pid] = [];
+    serviceMap[pid].push(ps);
+  });
+
+  const partners = bookmarkedPartners.map((b) =>
+    sanitizePartnerUser({
+      ...b.partner.toObject(),
+      services: serviceMap[b.partner._id.toString()] || [],
+      bookmarkedAt: b.createdAt,
+    })
+  );
 
   return res
     .status(200)

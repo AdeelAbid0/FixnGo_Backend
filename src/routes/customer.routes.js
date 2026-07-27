@@ -13,7 +13,12 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
-router.get("/profile", verifyToken, requireRole("customer"), getCustomerProfile);
+router.get(
+  "/profile",
+  verifyToken,
+  requireRole("customer"),
+  getCustomerProfile
+);
 router.patch(
   "/profile",
   verifyToken,
